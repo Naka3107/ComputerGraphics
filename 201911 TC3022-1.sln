@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Computer Graphics", "Computer Graphics\Computer Graphics.vcxproj", "{12D34D53-4BBE-4B24-8AF4-B02984172C67}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Math", "Math\Math.vcxproj", "{05C1DDD7-4263-40B2-B95C-BD61913CC590}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Math Test", "Math Test\Math Test.vcxproj", "{A5ACED77-BFBF-4367-9903-7AFB8F69CB67}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Util", "Util\Util.vcxproj", "{81EA5E80-6A04-42FD-90E7-0AF1058D06E2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ray Tracing", "Ray Tracing\Ray Tracing.vcxproj", "{BBB78198-A642-451A-9798-9418F7E92CBD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{12D34D53-4BBE-4B24-8AF4-B02984172C67}.Debug|x86.ActiveCfg = Debug|Win32
+		{12D34D53-4BBE-4B24-8AF4-B02984172C67}.Debug|x86.Build.0 = Debug|Win32
+		{05C1DDD7-4263-40B2-B95C-BD61913CC590}.Debug|x86.ActiveCfg = Debug|Win32
+		{05C1DDD7-4263-40B2-B95C-BD61913CC590}.Debug|x86.Build.0 = Debug|Win32
+		{A5ACED77-BFBF-4367-9903-7AFB8F69CB67}.Debug|x86.ActiveCfg = Debug|Win32
+		{A5ACED77-BFBF-4367-9903-7AFB8F69CB67}.Debug|x86.Build.0 = Debug|Win32
+		{81EA5E80-6A04-42FD-90E7-0AF1058D06E2}.Debug|x86.ActiveCfg = Debug|Win32
+		{81EA5E80-6A04-42FD-90E7-0AF1058D06E2}.Debug|x86.Build.0 = Debug|Win32
+		{BBB78198-A642-451A-9798-9418F7E92CBD}.Debug|x86.ActiveCfg = Debug|Win32
+		{BBB78198-A642-451A-9798-9418F7E92CBD}.Debug|x86.Build.0 = Debug|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {98118A50-9297-470A-AB9E-84AE7059D1B7}
+	EndGlobalSection
+EndGlobal
