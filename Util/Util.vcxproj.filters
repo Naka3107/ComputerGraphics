@@ -18,10 +18,10 @@
     <ClCompile Include="src\ifile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\time.cpp">
+    <ClCompile Include="src\image_writer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\image_writer.cpp">
+    <ClCompile Include="src\t.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,13 +29,13 @@
     <ClInclude Include="include\ifile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\time.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\image_writer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\stb_image_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\t.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

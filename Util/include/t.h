@@ -5,7 +5,7 @@
 typedef std::chrono::steady_clock hr_clock;
 typedef std::chrono::duration<float> time_in_seconds;
 
-class time
+class t
 {
 public:
 	static void init();
@@ -15,7 +15,7 @@ public:
 	static time_in_seconds delta_time();
 
 private:
-	time();
+	t();
 
 	static hr_clock::time_point _start_point;
 	static hr_clock::time_point _last_time;

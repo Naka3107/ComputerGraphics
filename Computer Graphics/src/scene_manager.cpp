@@ -7,7 +7,7 @@
 
 #include "scene.h"
 #include "scene_compatibility.h"
-#include "time.h"
+#include "t.h"
 
 std::vector<std::unique_ptr<scene>> scene_manager::sceneList;
 int scene_manager::currentScene = -1;
@@ -15,7 +15,7 @@ int scene_manager::currentScene = -1;
 void scene_manager::start(int argc, char* argv[], const std::string& name, int width, int height)
 {
 	// Time init
-	time::init();
+	t::init();
 
 	// Freeglut init
 	glutInit(&argc, argv);
@@ -95,7 +95,7 @@ void scene_manager::initialize()
 
 void scene_manager::mainLoop()
 {
-	time::tick();
+	t::tick();
 
 	if (currentScene >= 0)
 		sceneList.at(currentScene)->mainLoop();
