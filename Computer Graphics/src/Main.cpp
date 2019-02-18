@@ -1,31 +1,89 @@
 #include <iostream>
 
-#include "complex.h"
+// Siempre que quieran utilizar OpenGL en 
+// algun archivo, tienen que incluirlos 
+// en este orden.
+#include <GL/glew.h>
+#include <GL/freeglut.h>
+
+#include "t.h"
+
+float angle = 0.0f;
+
+void render_loop()
+{
+	t::tick();
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// glClearColor(sin(t::elapsed_time().count()), 220.0f / 256, 20.0f / 256, 60.0f / 256);
+
+	// WARNING: Esto es OpenGL viejo y solo lo vamos a usar en esta clase.
+
+	//glRotatef(90.0f * t::delta_time().count(), 0.0f, 0.0f, 1.0f);
+
+	glPushMatrix();
+	glRotatef(angle, 0.0f, 0.0f, 1.0f);
+	glBegin(GL_TRIANGLES);
+
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex2f(-1.0f, -1.0f);
+
+	glColor3f(0.0f, 0.0f, 1.0f);
+	glVertex2f(1.0f, -1.0f);
+
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex2f(0.0f, 1.0f);
+
+	glEnd();
+	glPopMatrix();
+	angle += 1;
+
+	glutSwapBuffers();
+
+	// OpenGL entra en un estado de espera.
+}
+
+void idle()
+{
+	// Cuando OpenGL esta en estado de espera,,
+	// vuelve a dibujar
+	glutPostRedisplay();
+}
 
 int main(int argc, char* argv[])
 {
-	//Utilizando el constructor por default
-	cgmath::complex c1;
+	// Inicializar Freeglut
+	// Freeglut es la libreria para abrir ventanas
+	// y configurar el contexto de OpenGL
+	glutInit(&argc, argv);
+	glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+	glutInitWindowSize(400, 400);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
+	glutCreateWindow("Hello, World!");
+	glutDisplayFunc(render_loop);
 
-	//Utilizando el constructor que recibe 2 floats
-	cgmath::complex c2(1.0f, -2.0f);
+	glutIdleFunc(idle);
 
-	std::cout << c1 << std::endl;
-	std::cout << c2 << std::endl;
+	// Inicializar GLEW
+	// GLEW busca el API de OpenGL directamente en la tarjeta de
+	// video. Microsoft no lo expone directamente.
+	glewInit();
 
-	c1.add(c2);
-	std::cout << c1 << std::endl;
+	// Configurar OpenGL
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
 
-	c1 += c2;
-	std::cout << c1 << std::endl;
+	// Mostrar Version de OpenGL
+	std::cout << glGetString(GL_VERSION) << std::endl;
 
-	cgmath::complex c3 = cgmath::complex::add(c1, c2);
-	std::cout << c3 << std::endl;
+	// Ejecutar el ciclo infinito (render loop)
+	// Se pausa la ejecucion del main
+	glutMainLoop();
 
-	std::cout << c1+c2+c3 << std::endl;
-
-	std::cout << "Press [ENTER] to continue" << std::endl;
-	std::cin.get();
 
 	return 0;
 }

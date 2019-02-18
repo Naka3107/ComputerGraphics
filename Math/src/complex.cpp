@@ -17,7 +17,7 @@ void cgmath::complex::add(const complex& other) {
 	imag += other.imag;
 }
 
-cgmath::complex& cgmath::complex::operator+=(const complex & other)
+cgmath::complex& cgmath::complex::operator+=(const complex& other)
 {
 	real += other.real;
 	imag += other.imag;
