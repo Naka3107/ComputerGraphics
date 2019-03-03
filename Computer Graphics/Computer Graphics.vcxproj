@@ -79,8 +79,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\scene_chaikin.cpp" />
     <ClCompile Include="src\scene_compatibility.cpp" />
+    <ClCompile Include="src\scene_conchoid.cpp" />
     <ClCompile Include="src\scene_manager.cpp" />
+    <ClCompile Include="src\scene_primitives.cpp" />
+    <ClCompile Include="src\scene_vertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Math\Math.vcxproj">
@@ -92,8 +96,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\scene.h" />
+    <ClInclude Include="include\scene_chaikin.h" />
     <ClInclude Include="include\scene_compatibility.h" />
+    <ClInclude Include="include\scene_conchoid.h" />
     <ClInclude Include="include\scene_manager.h" />
+    <ClInclude Include="include\scene_primitives.h" />
+    <ClInclude Include="include\scene_vertex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
