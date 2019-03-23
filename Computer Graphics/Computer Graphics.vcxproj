@@ -80,10 +80,14 @@
   <ItemGroup>
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\scene_chaikin.cpp" />
+    <ClCompile Include="src\scene_circle.cpp" />
+    <ClCompile Include="src\scene_circle_grid.cpp" />
     <ClCompile Include="src\scene_compatibility.cpp" />
     <ClCompile Include="src\scene_conchoid.cpp" />
+    <ClCompile Include="src\scene_cube.cpp" />
     <ClCompile Include="src\scene_manager.cpp" />
     <ClCompile Include="src\scene_primitives.cpp" />
+    <ClCompile Include="src\scene_sphere.cpp" />
     <ClCompile Include="src\scene_vertex.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -97,11 +101,28 @@
   <ItemGroup>
     <ClInclude Include="include\scene.h" />
     <ClInclude Include="include\scene_chaikin.h" />
+    <ClInclude Include="include\scene_circle.h" />
+    <ClInclude Include="include\scene_circle_grid.h" />
     <ClInclude Include="include\scene_compatibility.h" />
     <ClInclude Include="include\scene_conchoid.h" />
+    <ClInclude Include="include\scene_cube.h" />
     <ClInclude Include="include\scene_manager.h" />
     <ClInclude Include="include\scene_primitives.h" />
+    <ClInclude Include="include\scene_sphere.h" />
     <ClInclude Include="include\scene_vertex.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\circle.vert" />
+    <None Include="shaders\circle_grid.vert" />
+    <None Include="shaders\colors.frag" />
+    <None Include="shaders\cube.frag" />
+    <None Include="shaders\cube.vert" />
+    <None Include="shaders\grid.vert" />
+    <None Include="shaders\palmtree.frag" />
+    <None Include="shaders\positions.vert" />
+    <None Include="shaders\simple_pass.vert" />
+    <None Include="shaders\solid_color.frag" />
+    <None Include="shaders\sphere.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

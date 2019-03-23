@@ -1,4 +1,4 @@
-#include "scene_vertex.h"
+#include "scene_circle_grid.h"
 
 #include "ifile.h"
 #include "t.h"
@@ -6,14 +6,14 @@
 #include <iostream>
 #include <vector>
 
-scene_vertex::~scene_vertex()
+scene_circle_grid::~scene_circle_grid()
 {
 	// Borramos la memoria del ejecutable cuando
 	// la escena deja de existir.
 	glDeleteProgram(shader_program);
 }
 
-void scene_vertex::init()
+void scene_circle_grid::init()
 {
 	// ifile es parte del codigo que yo les doy
 	// El codigo fuente se encuentra en el proyecto Util
@@ -23,7 +23,7 @@ void scene_vertex::init()
 	// Si encuentra el archivo, intenta leerlo. En este caso,
 	// estamos intentando leer un archivo llamado grid,
 	// dentro de una carpeta shaders.
-	shader_file.read("shaders/grid.vert");
+	shader_file.read("shaders/circle_grid.vert");
 	// Obtenemos los contenidos leidos en el paso anterior
 	// utilizando el metodo get_contents. Regresa un string
 	std::string vertex_source = shader_file.get_contents();
@@ -117,29 +117,33 @@ void scene_vertex::init()
 	glDeleteShader(fragment_shader);
 }
 
-void scene_vertex::awake()
+void scene_circle_grid::awake()
 {
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 }
 
-void scene_vertex::sleep()
+void scene_circle_grid::sleep()
 {
 	glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
 	glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
-void scene_vertex::mainLoop()
+void scene_circle_grid::mainLoop()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(shader_program);
 	GLuint time_location = glGetUniformLocation(shader_program, "time");
 	glUniform1f(time_location, t::elapsed_time().count());
-	glDrawArrays(GL_POINTS, 0, 100);
+	int counter = 0;
+	for (int i = 0; i < 100; i++) {
+		glDrawArrays(GL_TRIANGLE_STRIP, counter, numberOfVertexes);
+		counter += numberOfVertexes;
+	}
 	glUseProgram(0);
 }
 
-void scene_vertex::resize(int width, int height)
+void scene_circle_grid::resize(int width, int height)
 {
 }
