@@ -216,10 +216,10 @@ cgmath::mat4 scene_cube::perspectiveMatrix(int width, int height)
 {
 	float PI = 3.14159f;
 	cgmath::mat4 perspective = cgmath::mat4(
-		cgmath::vec4(1/((width/height)*tan((2*PI/6)/2)), 0, 0, 0),
-		cgmath::vec4(0, 1/ tan((2 * PI / 6) / 2), 0, 0),
-		cgmath::vec4(0, 0, -(1000+1)/(1000-1), -2*1000*1 / (1000 - 1)),
-		cgmath::vec4(0, 0, -1, 0)
+		cgmath::vec4(1/((width/height)*tan((PI/3.0f)/2.0f)), 0, 0, 0),
+		cgmath::vec4(0, 1/ tan((PI / 3.0f) / 2), 0, 0),
+		cgmath::vec4(0, 0, -(1000+1)/(1000.0f-1.0f), -1),
+		cgmath::vec4(0, 0, -2 * 1000 * 1 / (1000.0f - 1.0f), 0)
 	);
 	return perspective;
 }
