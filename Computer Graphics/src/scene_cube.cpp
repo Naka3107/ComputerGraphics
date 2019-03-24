@@ -15,7 +15,7 @@ scene_cube::~scene_cube()
 
 void scene_cube::init()
 {
-	perspective = perspectiveMatrix(400, 400);
+	perspective = perspectiveMatrix(400.0f, 400.0f);
 	view = viewMatrix();
 	// Indices de los vertices para dibujar 2 triangulos, formando un cuadrado a pantalla completa
 	initializeVector();
@@ -212,13 +212,13 @@ cgmath::mat4 scene_cube::viewMatrix()
 	return cgmath::mat4::inverse(camera);
 }
 
-cgmath::mat4 scene_cube::perspectiveMatrix(int width, int height)
+cgmath::mat4 scene_cube::perspectiveMatrix(float width, float height)
 {
 	float PI = 3.14159f;
 	cgmath::mat4 perspective = cgmath::mat4(
 		cgmath::vec4(1/((width/height)*tan((PI/3.0f)/2.0f)), 0, 0, 0),
-		cgmath::vec4(0, 1/ tan((PI / 3.0f) / 2), 0, 0),
-		cgmath::vec4(0, 0, -(1000+1)/(1000.0f-1.0f), -1),
+		cgmath::vec4(0, 1/ tan((PI / 3.0f) / 2.0f), 0, 0),
+		cgmath::vec4(0, 0, -(1000.0f+1.0f)/(1000.0f-1.0f), -1),
 		cgmath::vec4(0, 0, -2 * 1000 * 1 / (1000.0f - 1.0f), 0)
 	);
 	return perspective;

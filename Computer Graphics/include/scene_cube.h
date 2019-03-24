@@ -53,7 +53,7 @@ private:
 	void initializeVector();
 	cgmath::mat4 modelMatrix();
 	cgmath::mat4 viewMatrix();
-	cgmath::mat4 perspectiveMatrix(int width, int height);
+	cgmath::mat4 perspectiveMatrix(float width, float height);
 	cgmath::mat4 newCube;
 	cgmath::mat4 model;
 	cgmath::mat4 view;
