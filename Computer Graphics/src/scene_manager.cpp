@@ -4,6 +4,7 @@
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <IL/il.h>
 
 #include "scene.h"
 #include "scene_compatibility.h"
@@ -15,6 +16,9 @@
 #include "scene_sphere.h" 
 #include "scene_circle.h" 
 #include "scene_cube.h"
+#include "scene_texture.h"
+#include "scene_shading.h"
+#include "scene_rain.h"
 #include "t.h"
 
 std::vector<std::unique_ptr<scene>> scene_manager::sceneList;
@@ -54,6 +58,17 @@ void scene_manager::start(int argc, char* argv[], const std::string& name, int w
 	// Scene init
 	initialize();
 
+	// Inicializar DevIL. Esto se debe hacer sólo una vez en
+	// todo el ciclo de vida del programa.
+	ilInit();
+	// Cambiar el punto de origen de las texturas. Por default, DevIL
+	// pone un punto de origen en la esquina superior izquierda.
+	// Eso es compatible con el sistema operativo, pero no con el
+	// funcionamiento de OpenGL.
+	ilEnable(IL_ORIGIN_SET);
+	// Configurar el punto de origen de las texturas en la esquina
+	// inferior izquierda
+	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
 	// Run main loop
 	glutMainLoop();
 }
@@ -113,6 +128,15 @@ void scene_manager::initialize()
 
 	std::unique_ptr<scene> scene9(new scene_cube);
 	sceneList.push_back(std::move(scene9));
+
+	std::unique_ptr<scene> scene10(new scene_texture);
+	sceneList.push_back(std::move(scene10));
+
+	std::unique_ptr<scene> scene11(new scene_shading);
+	sceneList.push_back(std::move(scene11));
+
+	std::unique_ptr<scene> scene12(new scene_rain);
+	sceneList.push_back(std::move(scene12));
 
 	for (auto& s : sceneList)
 		s->init();

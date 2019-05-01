@@ -125,7 +125,7 @@ void scene_circle_grid::awake()
 
 void scene_circle_grid::sleep()
 {
-	glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glDisable(GL_PROGRAM_POINT_SIZE);
 }
 

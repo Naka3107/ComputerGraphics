@@ -61,6 +61,11 @@ float cgmath::vec3::magnitude() const
 	return sqrt(x*x + y*y + z*z);
 }
 
+float cgmath::vec3::magnitudeNoSqrt() const
+{
+	return (x*x + y * y + z * z);
+}
+
 void cgmath::vec3::normalize()
 {
 	float m = magnitude();

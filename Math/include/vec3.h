@@ -22,6 +22,7 @@ namespace cgmath {
 
 		bool operator==(const vec3& v) const;
 		float magnitude() const;
+		float magnitudeNoSqrt() const;
 
 		void normalize();
 

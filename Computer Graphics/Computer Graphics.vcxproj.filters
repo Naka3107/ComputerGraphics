@@ -48,6 +48,15 @@
     <ClCompile Include="src\scene_cube.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\scene_texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_shading.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_rain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\scene_manager.h">
@@ -83,6 +92,15 @@
     <ClInclude Include="include\scene_cube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\scene_texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene_shading.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene_rain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\circle.vert" />
@@ -96,5 +114,11 @@
     <None Include="shaders\colors.frag" />
     <None Include="shaders\cube.vert" />
     <None Include="shaders\cube.frag" />
+    <None Include="shaders\texture.vert" />
+    <None Include="shaders\texture.frag" />
+    <None Include="shaders\shading.vert" />
+    <None Include="shaders\shading.frag" />
+    <None Include="shaders\rain.vert" />
+    <None Include="shaders\rain.frag" />
   </ItemGroup>
 </Project>
