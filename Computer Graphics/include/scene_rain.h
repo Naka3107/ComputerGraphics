@@ -39,7 +39,7 @@ private:
 	int numberOfParticles;
 
 	GLuint texture1;
-	std::vector<cgmath::vec3> triangle = {{ -0.8f, -0.288f,0}, {0.8, -0.288f,0},  {0.0f,0.6f,0.0f} };
+	std::vector<cgmath::vec3> triangle = {{ -0.1f, -0.288f,0}, {0.1, -0.288f,0},  {0.0f,0.8f,0.0f} };
 	std::vector<cgmath::vec2> coordinates = { {0.0, 0.0}, {1.0, 0.0}, {0.5, 1.0} };
 
 

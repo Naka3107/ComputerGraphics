@@ -212,6 +212,7 @@ void scene_rain::mainLoop()
 	int index = 0;
 	cgmath::mat4 model = modelMatrix();
 	model = rotateParticleMatrix(model);
+	glDisable(GL_DEPTH_TEST);
 
 	for (int i = 0; i < numberOfParticles; i++) {
 		index = std::get<0>(magnitudes[i]);
@@ -231,7 +232,7 @@ void scene_rain::mainLoop()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+	glEnable(GL_DEPTH_TEST);
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
@@ -454,7 +455,7 @@ cgmath::vec3 scene_rain::initializePosition()
 	float initialPosX = camX;
 	float initialPosY = 100.0f;
 	float initialPosZ = camZ;
-	float variancePosX = 10.0f;
+	float variancePosX = 100.0f;
 	float variancePosY = 50.0f;
 	float variancePosZ = 50.0f;
 
