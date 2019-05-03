@@ -5,7 +5,7 @@
 #include <IL/il.h>
 
 #include <iostream>
-#include <vector>
+#include <algorithm>
 
 scene_rain::~scene_rain()
 {
@@ -207,28 +207,26 @@ void scene_rain::mainLoop()
 	glBindTexture(GL_TEXTURE_2D, texture1);
 
 	view = viewMatrix();
-	int counter = 0;
-	int numberOfVertexes = 3;
 
 	sortParticles();
+	int index = 0;
+	cgmath::mat4 model = modelMatrix();
+	model = rotateParticleMatrix(model);
 
 	for (int i = 0; i < numberOfParticles; i++) {
-		int index = indices[i];
-		cgmath::mat4 model = modelMatrix();
+		index = std::get<0>(magnitudes[i]);
 		model[3][0] = pos[index].x;
 		model[3][1] = pos[index].y;
 		model[3][2] = pos[index].z;
-		model =rotateParticleMatrix(model);
 		cgmath::mat4 mv = view * model;
-		cgmath::mat4 newModelView(cgmath::vec4(1.0, 0.0, 0.0, mv[0][3]),
-			cgmath::vec4(mv[1][0], mv[1][1], mv[1][2], mv[1][3]),
-			cgmath::vec4(0.0, 0.0, 1.0, mv[2][3]),
-			cgmath::vec4(mv[3][0], mv[3][1], mv[3][2], mv[3][3]));
-		cgmath::mat4 mvp = perspective * newModelView;
+		mv[0][0] = 1.0f; mv[2][0] = 0.0f;
+		mv[0][1] = 0.0f; mv[2][1] = 0.0f;
+		mv[0][2] = 0.0f; mv[2][2] = 1.0f; 
+		cgmath::mat4 mvp = perspective * mv;
 		GLuint mvpMatrix = glGetUniformLocation(shader_program, "mvpMatrix");
 		glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
 			reinterpret_cast<GLfloat*>(&mvp));
-		glDrawArrays(GL_TRIANGLE_STRIP, counter, numberOfVertexes);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
 	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -294,25 +292,33 @@ void scene_rain::normalKeysDown(unsigned char key)
 			rotZ -= 0.2f;
 		}
 	}
-	if (key == 'o') {
+	if (key == 'o') {  //Agrega Partículas
 		int add = 100;
-		numberOfParticles += add;
 		for (int i = 0; i < add; i++) {
 			pos.push_back(initializePosition());
 			acel.push_back(initializeAcceleration());
 			vel.push_back(initializeVelocities());
 			ttl.push_back(float(t::elapsed_time().count()));
+			magnitudes.push_back(std::make_tuple(numberOfParticles+i, 0));
+
+			/*magnitudes.push_back(0);
+			indices.push_back(numberOfParticles + i);*/
 		}
+		numberOfParticles += add;
 	}
-	if (key == 'u') {
+	if (key == 'u') {  //Quita Partículas
 		int sub = 100;
-		numberOfParticles -= sub;
-		if (numberOfParticles > 0) {
+		if (numberOfParticles > 100) {
+			magnitudes.clear();
 			for (int i = 0; i < sub; i++) {
 				pos.pop_back();
 				acel.pop_back();
 				vel.pop_back();
 				ttl.pop_back();
+			}
+			numberOfParticles -= sub;
+			for (int i = 0; i < numberOfParticles; i++) {
+				magnitudes.push_back(std::make_tuple(i, 0));
 			}
 		}
 	}
@@ -426,7 +432,7 @@ float scene_rain::random()
 
 void scene_rain::initializeParticles()
 {
-	float initialMean = 2000.0f;
+	float initialMean = 1500.0f;
 	float varianceParticles = 500.0f;
 	numberOfParticles = static_cast<int>(initialMean + random()*varianceParticles);
 
@@ -435,7 +441,10 @@ void scene_rain::initializeParticles()
 		vel.push_back(initializeVelocities());
 		acel.push_back(initializeAcceleration());
 		ttl.push_back(float(t::elapsed_time().count()));
-		indices.push_back(i);
+		magnitudes.push_back(std::make_tuple(i,0));
+
+		/*indices.push_back(i);
+		magnitudes.push_back(0);*/
 	}
 }
 
@@ -445,7 +454,7 @@ cgmath::vec3 scene_rain::initializePosition()
 	float initialPosX = camX;
 	float initialPosY = 100.0f;
 	float initialPosZ = camZ;
-	float variancePosX = 100.0f;
+	float variancePosX = 10.0f;
 	float variancePosY = 50.0f;
 	float variancePosZ = 50.0f;
 
@@ -497,63 +506,68 @@ void scene_rain::updateParticles()
 	}
 }
 
+bool sortbysec(const std::tuple<int, float>& a, const std::tuple<int, float>& b)
+{
+	return (std::get<1>(a) > std::get<1>(b));
+}
+
 void scene_rain::sortParticles()
 {
 	cgmath::vec3 cameraPosition = { camX, 0, camZ };
-	std::vector<float> magnitudes;
+
 	for (int i = 0; i < numberOfParticles; i++) {
 		cgmath::vec3 vector = pos[i] - cameraPosition;
-		magnitudes.push_back(vector.magnitudeNoSqrt());
+		std::get<1>(magnitudes[i])= vector.magnitudeNoSqrt();
 	}
-	quicksort(magnitudes, 0, magnitudes.size() - 1);
+	std::sort(magnitudes.begin(), magnitudes.end(), sortbysec);
 }
 
-void scene_rain::swap(std::vector<float> magnitudes,int a, int b)
-{
-	float temp = magnitudes[a];
-	magnitudes[a] = magnitudes[b];
-	magnitudes[b] = temp;
-
-	int tempIndices = indices[a];
-	indices[a] = indices[b];
-	indices[b] = tempIndices;
-}
-
-void scene_rain::quicksort(std::vector<float> magnitudes,int l, int r)
-{
-	// Base case: No need to sort arrays of length <= 1
-	if (l >= r)
-	{
-		return;
-	}
-
-	// Choose pivot to be the last element in the subarray
-	float pivot = magnitudes[r];
-
-	// Index indicating the "split" between elements smaller than pivot and 
-	// elements greater than pivot
-	int cnt = l;
-
-	// Traverse through array from l to r
-	for (int i = l; i <= r; i++)
-	{
-		// If an element less than or equal to the pivot is found...
-		if (magnitudes[i] >= pivot)
-		{
-			// Then swap arr[cnt] and arr[i] so that the smaller element arr[i] 
-			// is to the left of all elements greater than pivot
-			swap(magnitudes, cnt, i);
-
-			// Make sure to increment cnt so we can keep track of what to swap
-			// arr[i] with
-			cnt++;
-		}
-	}
-
-	// NOTE: cnt is currently at one plus the pivot's index 
-	// (Hence, the cnt-2 when recursively sorting the left side of pivot)
-	quicksort(magnitudes, l, cnt - 2); // Recursively sort the left side of pivot
-	quicksort(magnitudes, cnt, r);   // Recursively sort the right side of pivot
-}
-
-
+//void scene_rain::swap(std::vector<float>& magnitudes,int a, int b)
+//{
+//	float temp = magnitudes[a];
+//	magnitudes[a] = magnitudes[b];
+//	magnitudes[b] = temp;
+//
+//	int tempIndices = indices[a];
+//	indices[a] = indices[b];
+//	indices[b] = tempIndices;
+//}
+//
+//void scene_rain::quicksort(std::vector<float>& magnitudes,int l, int r)
+//{
+//	// Base case: No need to sort arrays of length <= 1
+//	if (l >= r)
+//	{
+//		return;
+//	}
+//
+//	// Choose pivot to be the last element in the subarray
+//	float pivot = magnitudes[r];
+//
+//	// Index indicating the "split" between elements smaller than pivot and 
+//	// elements greater than pivot
+//	int cnt = l;
+//
+//	// Traverse through array from l to r
+//	for (int i = l; i <= r; i++)
+//	{
+//		// If an element less than or equal to the pivot is found...
+//		if (magnitudes[i] >= pivot)
+//		{
+//			// Then swap arr[cnt] and arr[i] so that the smaller element arr[i] 
+//			// is to the left of all elements greater than pivot
+//			swap(magnitudes, cnt, i);
+//
+//			// Make sure to increment cnt so we can keep track of what to swap
+//			// arr[i] with
+//			cnt++;
+//		}
+//	}
+//
+//	// NOTE: cnt is currently at one plus the pivot's index 
+//	// (Hence, the cnt-2 when recursively sorting the left side of pivot)
+//	quicksort(magnitudes, l, cnt - 2); // Recursively sort the left side of pivot
+//	quicksort(magnitudes, cnt, r);   // Recursively sort the right side of pivot
+//}
+//
+//

@@ -2,6 +2,7 @@
 
 #include "scene.h"
 #include <vector>
+#include <tuple>
 #include "vec2.h"
 #include "vec3.h"
 #include "vec4.h"
@@ -38,7 +39,7 @@ private:
 	int numberOfParticles;
 
 	GLuint texture1;
-	std::vector<cgmath::vec3> triangle = {{ -0.1f, -0.288f,0}, {0.1, -0.288f,0},  {0.0f,0.6f,0.0f} };
+	std::vector<cgmath::vec3> triangle = {{ -0.8f, -0.288f,0}, {0.8, -0.288f,0},  {0.0f,0.6f,0.0f} };
 	std::vector<cgmath::vec2> coordinates = { {0.0, 0.0}, {1.0, 0.0}, {0.5, 1.0} };
 
 
@@ -46,8 +47,10 @@ private:
 	std::vector<cgmath::vec3> vel;
 	std::vector<cgmath::vec3> acel;
 	std::vector<float> ttl;
+	std::vector<std::tuple<int, float>> magnitudes;
 
-	std::vector<int>indices;
+	/*std::vector<float> magnitudes;
+	std::vector<int>indices;*/
 
 	float random();
 
@@ -62,10 +65,6 @@ private:
 	void updateParticles();
 
 	void sortParticles();
-
-	void swap(std::vector<float> magnitudes,int a, int b);
-
-	void quicksort(std::vector<float> magnitudes,int l, int r);
 
 	cgmath::mat4 modelMatrix();
 	cgmath::mat4 viewMatrix();
