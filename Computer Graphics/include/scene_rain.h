@@ -35,8 +35,10 @@ private:
 	GLuint textureCoordinatesVBO;
 	GLuint indicesBuffer;
 
-	float camX = 0.0f, camZ = 0.0f, distTras = 1.0f, rotX=0.0f, rotY=0.0f, distRot=0.1f, airX=0.0f, rotZ=0.0f;
+	float camX = 0.0f, camZ = 0.0f, distTras = 1.0f, rotX = 0.0f, rotY = 0.0f, distRot = 0.1f, airX = 0.0f, rotZ = 0.0f, activeParticles = 0.0f, emissionRate = 100.0f;
+	
 	int numberOfParticles;
+	int totalAliveParticles=0;
 
 	GLuint texture1;
 	std::vector<cgmath::vec3> triangle = {{ -0.1f, -0.288f,0}, {0.1, -0.288f,0},  {0.0f,0.8f,0.0f} };
@@ -48,19 +50,19 @@ private:
 	std::vector<cgmath::vec3> acel;
 	std::vector<float> ttl;
 	std::vector<std::tuple<int, float>> magnitudes;
-
-	/*std::vector<float> magnitudes;
-	std::vector<int>indices;*/
+	std::vector<bool> isActive;
 
 	float random();
 
 	void initializeVector();
-
 	void initializeParticles();
 
 	cgmath::vec3 initializePosition();
 	cgmath::vec3 initializeVelocities();
 	cgmath::vec3 initializeAcceleration();
+	float initializeTimeToLive();
+
+	void activateParticle(int i);
 
 	void updateParticles();
 
