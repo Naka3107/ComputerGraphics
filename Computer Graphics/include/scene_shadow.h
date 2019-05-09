@@ -2,7 +2,6 @@
 
 #include "scene.h"
 #include <vector>
-#include <tuple>
 #include "vec2.h"
 #include "vec3.h"
 #include "vec4.h"
@@ -11,10 +10,10 @@
 
 // Escena de prueba para comenzar a trabajar con
 // fragment shaders.
-class scene_rain : public scene
+class scene_shadow : public scene
 {
 public:
-	~scene_rain();
+	~scene_shadow();
 
 	void init();
 	void awake();
@@ -22,36 +21,55 @@ public:
 	void reset() { }
 	void mainLoop();
 	void resize(int width, int height);
+	void normalKeysDown(unsigned char key) { }
 	void normalKeysUp(unsigned char key) { }
 	void specialKeys(int key) { }
 	void passiveMotion(int x, int y) { }
-	void normalKeysDown(unsigned char key);
 
 private:
 	GLuint shader_program;
 
-	GLuint vao;
+	GLuint vaoCube;
 	GLuint vaoroom;
-	GLuint positionsVBO;
-	GLuint colorsVBO;
-	GLuint textureCoordinatesVBO;
-	GLuint normalizedVertexesVBO;
-	GLuint indicesBuffer;
+	GLuint cubePositionsVBO;
+	GLuint cubeTextureCoordinatesVBO;
+	GLuint cubeNormalVectorsVBO;
+	GLuint cubeIndexesBuffer;
 	GLuint roomIndexesBuffer;
 	GLuint roomTextureCoordinatesVBO;
 	GLuint roomPositionsVBO;
 	GLuint roomNormalVectorsVBO;
 
-	float camX = 0.0f, camZ = 0.0f, distTras = 1.0f, rotX = 0.0f, rotY = 0.0f, distRot = 0.05f, airX = 0.0f, rotZ = 0.0f, activeParticles = 0.0f, emissionRate = 100.0f;
+	GLuint cubeTexture, roomTexture;
 
-	int numberOfParticles;
-	int totalAliveParticles = 0;
+	std::vector<cgmath::vec4> cube = {
+		{-3,3,3,1}, {3,3,3,1}, {3,9,3,1}, {-3,9,3,1},
+		{-3,9,3,1}, {3,9,3,1}, {3,9,-3,1}, {-3,9,-3,1},
+		{-3,9,-3,1}, {3,9,-3,1}, {3,3,-3,1}, {-3,3,-3,1},
+		{-3,3,-3,1}, {3,3,-3,1}, {3,3,3,1}, {-3,3,3,1},
+		{3,3,3,1}, {3,3,-3,1}, {3,9,-3,1}, {3,9,3,1},
+		{-3,3,-3,1}, {-3,3,3,1}, {-3,9,3,1}, {-3,9,-3,1}
+	};
 
-	GLuint texture1, roomTexture;
+	std::vector<cgmath::vec2> cubeTextureCoordinates = {
+		{0.0,0.0}, {1.0,0.0}, {1.0,1.0}, {0.0,1.0},
+		{0.0,0.0}, {1.0,0.0}, {1.0,1.0}, {0.0,1.0},
+		{0.0,0.0}, {1.0,0.0}, {1.0,1.0}, {0.0,1.0},
+		{0.0,0.0}, {1.0,0.0}, {1.0,1.0}, {0.0,1.0},
+		{0.0,0.0}, {1.0,0.0}, {1.0,1.0}, {0.0,1.0},
+		{0.0,0.0}, {1.0,0.0}, {1.0,1.0}, {0.0,1.0}
+	};
 
-	std::vector<cgmath::vec3> triangle = { { -0.8f, -0.288f,0}, {0.8f, -0.288f,0},  {0.0f,0.8f,0.0f} };
-	std::vector<cgmath::vec2> coordinates = { {0.0, 0.0}, {1.0, 0.0}, {0.5, 1.0} };
-	std::vector<cgmath::vec3> normalVectors = {	{0,0,1}, {0,0,1}, {0,0,1} };
+	std::vector<cgmath::vec3> cubeNormalVectors = {
+		{0,0,1}, {0,0,1}, {0,0,1}, {0,0,1},
+		{0,1,0}, {0,1,0}, {0,1,0}, {0,1,0},
+		{0,0,-1}, {0,0,-1}, {0,0,-1}, {0,0,-1},
+		{0,-1,0}, {0,-1,0}, {0,-1,0}, {0,-1,0},
+		{1,0,0}, {1,0,0}, {1,0,0}, {1,0,0},
+		{-1,0,0}, {-1,0,0}, {-1,0,0}, {-1,0,0}
+	};
+
+	std::vector<unsigned int> indexesCube = { 0,1,2,0,2,3,4,5,6,4,6,7,8,9,10,8,10,11,12,13,14,12,14,15,16,17,18,16,18,19,20,21,22,20,22,23 };
 
 	std::vector<cgmath::vec4> room = {
 		{-50,-10,-50,1}, {50,-10,-50,1}, {50,-10,50,1}, {-50,-10,50,1},  //piso
@@ -61,11 +79,11 @@ private:
 		{50,-10,50,1}, {-50,-10,50,1}, {-50,30,50,1}, {50,30,50,1} };   //pared trasera
 
 	std::vector<cgmath::vec2> roomTextureCoordinates = {
-		{0.0,0.5}, {0.5,0.5}, {0.5,1.0}, {1.0,0.0},
-		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
-		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
-		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},	
-		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
+		{0.0,0.0}, {8.0,0.0}, {8.0,8.0}, {0.0,8.0},
+		{0.0,0.0}, {8.0,0.0}, {8.0,8.0}, {0.0,8.0},
+		{0.0,0.0}, {8.0,0.0}, {8.0,8.0}, {0.0,8.0},
+		{0.0,0.0}, {8.0,0.0}, {8.0,8.0}, {0.0,8.0},
+		{0.0,0.0}, {8.0,0.0}, {8.0,8.0}, {0.0,8.0}
 	};
 
 	std::vector<unsigned int> indexesRoom = { 0,1,2,0,2,3,4,5,6,4,6,7,8,9,10,8,10,11,12,13,14,12,14,15,16,17,18,16,18,19 };
@@ -78,33 +96,14 @@ private:
 		{0,0,-1}, {0,0,-1}, {0,0,-1}, {0,0,-1}
 	};
 
-	std::vector<cgmath::vec3> pos;
-	std::vector<cgmath::vec3> vel;
-	std::vector<cgmath::vec3> acel;
-	std::vector<float> ttl;
-	std::vector<std::tuple<int, float>> magnitudes;
-	std::vector<bool> isActive;
-
-	float random();
-
 	void initializeBuffers();
-	void initializePool();
-
-	cgmath::vec3 initializePosition();
-	cgmath::vec3 initializeVelocities();
-	cgmath::vec3 initializeAcceleration();
-	float initializeTimeToLive();
-
-	void activateParticle(int i);
-	void killParticle(int i);
-	void updateParticles();
-	void sortParticles();
 
 	cgmath::mat4 modelMatrix();
 	cgmath::mat4 viewMatrix();
-	cgmath::mat4 rotateCameraMatrix(cgmath::mat4 m);
-	cgmath::mat4 rotateParticleMatrix(cgmath::mat4 m);
 	cgmath::mat4 perspectiveMatrix(float width, float height);
+	cgmath::mat4 mvp;
+	cgmath::mat4 model;
 	cgmath::mat4 view;
 	cgmath::mat4 perspective;
 };
+

@@ -1,4 +1,4 @@
-#include "scene_shading.h"
+#include "scene_shadow.h"
 
 #include "ifile.h"
 #include "t.h"
@@ -7,21 +7,21 @@
 #include <iostream>
 #include <vector>
 
-scene_shading::~scene_shading()
+scene_shadow::~scene_shadow()
 {
 	// Borramos la memoria del ejecutable cuando
 	// la escena deja de existir.
-	glDeleteTextures(1, &texture1);
-	glDeleteTextures(1, &texture2);
+	glDeleteTextures(1, &roomTexture);
+	glDeleteTextures(1, &cubeTexture);
 	glDeleteProgram(shader_program);
 }
 
-void scene_shading::init()
+void scene_shadow::init()
 {
 	perspective = perspectiveMatrix(400.0f, 400.0f);
 	view = viewMatrix();
 
-	initializeVector();
+	initializeBuffers();
 	// ifile es parte del codigo que yo les doy
 	// El codigo fuente se encuentra en el proyecto Util
 	// Su unico proposito en la vida es leer archivos de texto
@@ -30,7 +30,7 @@ void scene_shading::init()
 	// Si encuentra el archivo, intenta leerlo. En este caso,
 	// estamos intentando leer un archivo llamado grid,
 	// dentro de una carpeta shaders.
-	shader_file.read("shaders/shading.vert");
+	shader_file.read("shaders/shadow.vert");
 	// Obtenemos los contenidos leidos en el paso anterior
 	// utilizando el metodo get_contents. Regresa un string
 	std::string vertex_source = shader_file.get_contents();
@@ -76,7 +76,7 @@ void scene_shading::init()
 	// Repetimos el mismo proceso, pero ahora para un
 	// fragment shader contenido en un archivo llamado
 	// solid_color.frag dentro de la carpeta shaders.
-	shader_file.read("shaders/shading.frag");
+	shader_file.read("shaders/shadow.frag");
 	std::string fragment_source = shader_file.get_contents();
 	const GLchar* fragment_source_c = (const GLchar*)fragment_source.c_str();
 	// El identificador del shader lo creamos pero para un 
@@ -140,8 +140,8 @@ void scene_shading::init()
 	ilBindImage(image1);
 	ilLoadImage("images/crate.png");
 
-	glGenTextures(1, &texture1);
-	glBindTexture(GL_TEXTURE_2D, texture1);
+	glGenTextures(1, &cubeTexture);
+	glBindTexture(GL_TEXTURE_2D, cubeTexture);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -165,10 +165,10 @@ void scene_shading::init()
 
 	ilGenImages(1, &image2);
 	ilBindImage(image2);
-	ilLoadImage("images/pig.png");
+	ilLoadImage("images/wall.png");
 
-	glGenTextures(1, &texture2);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glGenTextures(1, &roomTexture);
+	glBindTexture(GL_TEXTURE_2D, roomTexture);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -190,40 +190,38 @@ void scene_shading::init()
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	GLuint textureLocation = glGetUniformLocation(shader_program, "texture1");
+	GLuint textureLocation = glGetUniformLocation(shader_program, "texture");
 	glUniform1i(textureLocation, 0);
-	textureLocation = glGetUniformLocation(shader_program, "texture2");
-	glUniform1i(textureLocation, 1);
 
 	GLuint light_position = glGetUniformLocation(shader_program, "lightPosition");
-	glUniform3f(light_position, 0.0f ,0.0f ,10.0f);
+	glUniform3f(light_position, 5.0f, 10.0f, 10.0f);
 
 	GLuint light_color = glGetUniformLocation(shader_program, "lightColor");
 	glUniform3f(light_color, 1.0f, 1.0f, 1.0f);
 
 	GLuint camera_position = glGetUniformLocation(shader_program, "cameraPosition");
 	glUniform3f(camera_position, 0.0f, 0.0f, 0.0f);
-	
+
 	glUseProgram(0);
 }
 
-void scene_shading::awake()
+void scene_shadow::awake()
 {
 	glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 }
 
-void scene_shading::sleep()
+void scene_shadow::sleep()
 {
 	glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
 	glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
-void scene_shading::mainLoop()
+void scene_shadow::mainLoop()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shader_program);
-	glBindVertexArray(vao);
+	glBindVertexArray(vaoCube);
 
 	cgmath::mat4 model = modelMatrix();
 
@@ -237,29 +235,45 @@ void scene_shading::mainLoop()
 		reinterpret_cast<GLfloat*>(&mvp));
 
 	GLuint normalMatrix = glGetUniformLocation(shader_program, "normalMatrix");
-	
+
 	cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
 	glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture1);
+	glBindTexture(GL_TEXTURE_2D, cubeTexture);
 
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture2);
-
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, indexesCube.size(), GL_UNSIGNED_INT, nullptr);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	glActiveTexture(GL_TEXTURE1);
+	glBindVertexArray(0);
+
+	glBindVertexArray(vaoroom);
+	
+	model=1.0f;
+	glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
+
+	mvp = perspective * view * model;
+	glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
+		reinterpret_cast<GLfloat*>(&mvp));
+
+	normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
+	glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, roomTexture);
+
+	glDrawElements(GL_TRIANGLES, indexesRoom.size(), GL_UNSIGNED_INT, nullptr);
+
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
 
-void scene_shading::resize(int width, int height)
+void scene_shadow::resize(int width, int height)
 {
 	perspective = perspectiveMatrix(width, height);
 
@@ -272,7 +286,7 @@ void scene_shading::resize(int width, int height)
 	glUseProgram(0);
 }
 
-cgmath::mat4 scene_shading::modelMatrix()
+cgmath::mat4 scene_shadow::modelMatrix()
 {
 	float PI = 3.14159f;
 
@@ -297,22 +311,22 @@ cgmath::mat4 scene_shading::modelMatrix()
 		cgmath::vec4(0, 0, 0, 1)
 	);
 
-	return rotationX * rotationY*rotationZ;
+	return rotationX*rotationY*rotationZ;
 }
 
-cgmath::mat4 scene_shading::viewMatrix()
+cgmath::mat4 scene_shadow::viewMatrix()
 {
 	cgmath::mat4 camera = cgmath::mat4(
 		cgmath::vec4(1, 0, 0, 0),
 		cgmath::vec4(0, 1, 0, 0),
 		cgmath::vec4(0, 0, 1, 0),
-		cgmath::vec4(0, 0, 10, 1)
+		cgmath::vec4(0, 0, 50, 1)
 	);
 
 	return cgmath::mat4::inverse(camera);
 }
 
-cgmath::mat4 scene_shading::perspectiveMatrix(float width, float height)
+cgmath::mat4 scene_shadow::perspectiveMatrix(float width, float height)
 {
 	float PI = 3.14159f;
 	cgmath::mat4 perspective = cgmath::mat4(
@@ -324,38 +338,69 @@ cgmath::mat4 scene_shading::perspectiveMatrix(float width, float height)
 	return perspective;
 }
 
-void scene_shading::initializeVector() {
+void scene_shadow::initializeBuffers() {
 	// Creacion y activacion del vao
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	glGenVertexArrays(1, &vaoCube);
+	glBindVertexArray(vaoCube);
 
 	// Creacion y configuracion del buffer del atributo de posicion
-	glGenBuffers(1, &positionsVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, positionsVBO);
+	glGenBuffers(1, &cubePositionsVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, cubePositionsVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec4) * cube.size(), cube.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glGenBuffers(1, &textureCoordinatesVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, textureCoordinatesVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec2) * coordinates.size(), coordinates.data(), GL_STATIC_DRAW);
+	glGenBuffers(1, &cubeTextureCoordinatesVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, cubeTextureCoordinatesVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec2) * cubeTextureCoordinates.size(), cubeTextureCoordinates.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glGenBuffers(1, &normalizedVertexesVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, normalizedVertexesVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec3) * normalVectors.size(), normalVectors.data(), GL_STATIC_DRAW);
+	glGenBuffers(1, &cubeNormalVectorsVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, cubeNormalVectorsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec3) * cubeNormalVectors.size(), cubeNormalVectors.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// A diferencia de los buffers de atributos, los buffers de indices deben permanecer activos. No hacemos unbind.
-	glGenBuffers(1, &indicesBuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
+	glGenBuffers(1, &cubeIndexesBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeIndexesBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indexesCube.size(), indexesCube.data(), GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
+
+	glGenVertexArrays(1, &vaoroom);
+	glBindVertexArray(vaoroom);
+
+	glGenBuffers(1, &roomPositionsVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, roomPositionsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec4) * room.size(), room.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &roomTextureCoordinatesVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, roomTextureCoordinatesVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec2) * roomTextureCoordinates.size(), roomTextureCoordinates.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &roomNormalVectorsVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, roomNormalVectorsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec3) * roomNormalVectors.size(), roomNormalVectors.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &roomIndexesBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, roomIndexesBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indexesRoom.size(), indexesRoom.data(), GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+
 }
 

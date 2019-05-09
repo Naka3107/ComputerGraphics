@@ -12,6 +12,7 @@ scene_rain::~scene_rain()
 	// Borramos la memoria del ejecutable cuando
 	// la escena deja de existir.
 	glDeleteTextures(1, &texture1);
+	glDeleteTextures(1, &roomTexture);
 	glDeleteProgram(shader_program);
 }
 
@@ -22,8 +23,8 @@ void scene_rain::init()
 
 	srand(static_cast <unsigned> (time(0)));
 
-	initializeParticles();
-	initializeVector();
+	initializePool();
+	initializeBuffers();
 	// ifile es parte del codigo que yo les doy
 	// El codigo fuente se encuentra en el proyecto Util
 	// Su unico proposito en la vida es leer archivos de texto
@@ -113,6 +114,8 @@ void scene_rain::init()
 	// En este caso, shader_program es manager de fragment_shader
 	glAttachShader(shader_program, fragment_shader);
 	glBindAttribLocation(shader_program, 0, "VertexPosition");
+	glBindAttribLocation(shader_program, 1, "TexturePosition");
+	glBindAttribLocation(shader_program, 2, "NormalPosition");
 	// Ejecutamos el proceso de linkeo. En esta etapa se busca
 	// que los shaders puedan trabajar en conjunto y todo este
 	// definido correctamente.
@@ -146,7 +149,7 @@ void scene_rain::init()
 	// Configurar el punto de origen de las texturas en la esquina
 	// inferior izquierda
 	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
-	ILuint image1;
+	ILuint image1, image2;
 	ilGenImages(1, &image1);
 	ilBindImage(image1);
 	ilLoadImage("images/rain.png");
@@ -174,9 +177,42 @@ void scene_rain::init()
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	GLuint textureLocation = glGetUniformLocation(shader_program, "texture1");
+	ilGenImages(1, &image2);
+	ilBindImage(image2);
+	ilLoadImage("images/room.jpg");
+
+	glGenTextures(1, &roomTexture);
+	glBindTexture(GL_TEXTURE_2D, roomTexture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D,
+		0,
+		ilGetInteger(IL_IMAGE_FORMAT),
+		ilGetInteger(IL_IMAGE_WIDTH),
+		ilGetInteger(IL_IMAGE_HEIGHT),
+		0,
+		ilGetInteger(IL_IMAGE_FORMAT),
+		ilGetInteger(IL_IMAGE_TYPE),
+		ilGetData());
+
+	ilBindImage(0);
+	ilDeleteImages(1, &image2);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	GLuint textureLocation = glGetUniformLocation(shader_program, "texture");
 	glUniform1i(textureLocation, 0);
-	
+
+	GLuint light_position = glGetUniformLocation(shader_program, "lightPosition");
+	glUniform3f(light_position, 5.0f, 10.0f, 10.0f);
+
+	GLuint light_color = glGetUniformLocation(shader_program, "lightColor");
+	glUniform3f(light_color, 1.0f, 1.0f, 1.0f);
+
 	glUseProgram(0);
 }
 
@@ -198,25 +234,54 @@ void scene_rain::sleep()
 void scene_rain::mainLoop()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
 
-	
 	glUseProgram(shader_program);
-	glBindVertexArray(vao);
+	glBindVertexArray(vaoroom);  //Render del cuarto
+
+	GLuint modelMatrix = glGetUniformLocation(shader_program, "modelMatrix");
+	GLuint normalMatrix = glGetUniformLocation(shader_program, "normalMatrix");
+	GLuint mvpMatrix = glGetUniformLocation(shader_program, "mvpMatrix");
+
+	cgmath::mat4 model = 1.0f;
+	glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
+
+	cgmath::mat4 mvp = perspective * view * model;
+	glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
+		reinterpret_cast<GLfloat*>(&mvp));
+
+	cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
+	glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, roomTexture);
+
+	glDrawElements(GL_TRIANGLES, indexesRoom.size(), GL_UNSIGNED_INT, nullptr);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glBindVertexArray(0);
+
+
+	glBindVertexArray(vao); //Render de las gotas
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture1);
 
 	view = viewMatrix();
-	
-	activeParticles += t::delta_time().count() * emissionRate; //Calcula el flujo de particulas con respecto al tiempo y razón de emisión.
+
+	if (activeParticles <= emissionRate) {
+		activeParticles += t::delta_time().count() * emissionRate;   //Calcula el flujo de particulas con respecto al tiempo y razón de emisión.
+	}
 
 	if (activeParticles >= 1) { // Si es mayor o igual a uno, ya puede dibujar la particula
-		for (int i = 0; i < numberOfParticles; i++) { //Por cada particula en el pool busca alguna que este apagada
+		for (int i = numberOfParticles-1; i >= 0 ; i--) { //Por cada particula en el pool busca alguna que este apagada
 			if (activeParticles < 1) {
 				break;
 			}
 			else {
-				if (!isActive[i]) {    
+				if (!isActive[i]) {
 					activateParticle(i);  //Si encuentras una apagada, préndela (al prenderse se van al inicio del arreglo, entonces estan en orden)
 					totalAliveParticles += 1;  //Llevamos un contador de cuantas particulas existen, para que el sorteo y update de particulas lo haga SOLO con las que estan vivas, no con todas las particulas (mas eficiente)
 				}
@@ -227,21 +292,25 @@ void scene_rain::mainLoop()
 	sortParticles();
 
 	int index = 0;
-	cgmath::mat4 model = modelMatrix();
+	model = (1.0f);
 	model = rotateParticleMatrix(model);
-	glDisable(GL_DEPTH_TEST);
 
 	for (int i = 0; i < totalAliveParticles; i++) {  //Solo dibuja las particulas activas
 		index = std::get<0>(magnitudes[i]);
 		model[3][0] = pos[index].x;
 		model[3][1] = pos[index].y;
 		model[3][2] = pos[index].z;
+
+		glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
+
+		cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
+		glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
+
 		cgmath::mat4 mv = view * model;
 		mv[0][0] = 1.0f; mv[2][0] = 0.0f;
 		mv[0][1] = 0.0f; mv[2][1] = 0.0f;
 		mv[0][2] = 0.0f; mv[2][2] = 1.0f;
 		cgmath::mat4 mvp = perspective * mv;
-		GLuint mvpMatrix = glGetUniformLocation(shader_program, "mvpMatrix");
 		glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
 			reinterpret_cast<GLfloat*>(&mvp));
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
@@ -249,8 +318,9 @@ void scene_rain::mainLoop()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	glEnable(GL_DEPTH_TEST);
 	glBindVertexArray(0);
+
+	glEnable(GL_DEPTH_TEST);
 	glUseProgram(0);
 }
 
@@ -269,7 +339,7 @@ void scene_rain::resize(int width, int height)
 
 void scene_rain::normalKeysDown(unsigned char key)
 {
-	
+
 	if (key == 'w') {
 		camZ -= distTras;
 	}
@@ -294,57 +364,56 @@ void scene_rain::normalKeysDown(unsigned char key)
 		}
 	}
 	if (key == 'i') {
-		if (rotX < 2) {
+		if (rotX < 3) {
 			rotX += distRot;
 		}
 	}
 	if (key == 'e') {
-		if (airX < 40.0f) {
-			airX += 8.0f;
+		if (airX < 70.0f) {
+			airX += 14.0f;
 			rotZ += 0.2f;
 		}
 	}
 	if (key == 'q') {
-		if (airX > -40.0f) {
-			airX -= 8.0f;
+		if (airX > -70.0f) {
+			airX -= 14.0f;
 			rotZ -= 0.2f;
 		}
 	}
-	//if (key == 'o') {  //Agrega Partículas
-	//	int add = 100;
-	//	for (int i = 0; i < add; i++) {
-	//		pos.push_back(initializePosition());
-	//		acel.push_back(initializeAcceleration());
-	//		vel.push_back(initializeVelocities());
-	//		ttl.push_back(float(t::elapsed_time().count()));
-	//		magnitudes.push_back(std::make_tuple(numberOfParticles+i, 0));
-	//	}
-	//	numberOfParticles += add;
-	//}
-	//if (key == 'u') {  //Quita Partículas
-	//	int sub = 100;
-	//	if (numberOfParticles > 100) {
-	//		magnitudes.clear();
-	//		for (int i = 0; i < sub; i++) {
-	//			pos.pop_back();
-	//			acel.pop_back();
-	//			vel.pop_back();
-	//			ttl.pop_back();
-	//		}
-	//		numberOfParticles -= sub;
-	//		for (int i = 0; i < numberOfParticles; i++) {
-	//			magnitudes.push_back(std::make_tuple(i, 0));
-	//		}
-	//	}
-	//}
+	if (key == 'o') {  //Agrega Partículas
+		//int add = 100;
+		//for (int i = 0; i < add; i++) {
+		//	pos.push_back(initializePosition());
+		//	acel.push_back(initializeAcceleration());
+		//	vel.push_back(initializeVelocities());
+		//	ttl.push_back(float(t::elapsed_time().count()));
+		//	magnitudes.push_back(std::make_tuple(numberOfParticles+i, 0));
+		//}
+		//numberOfParticles += add;
 
-}
+		emissionRate += 50.0f;
 
-cgmath::mat4 scene_rain::modelMatrix()
-{
-	cgmath::mat4 model(1.0f);
+	}
+	if (key == 'u') {  //Quita Partículas
+		/*int sub = 100;
+		if (numberOfParticles > 100) {
+			magnitudes.clear();
+			for (int i = 0; i < sub; i++) {
+				pos.pop_back();
+				acel.pop_back();
+				vel.pop_back();
+				ttl.pop_back();
+			}
+			numberOfParticles -= sub;
+			for (int i = 0; i < numberOfParticles; i++) {
+				magnitudes.push_back(std::make_tuple(i, 0));
+			}
+		}*/
+		if (emissionRate >= 50.0f) {
+			emissionRate -= 50.0f;
+		}
+	}
 
-	return model;
 }
 
 cgmath::mat4 scene_rain::viewMatrix()
@@ -360,7 +429,8 @@ cgmath::mat4 scene_rain::viewMatrix()
 	camera[3][0] += camX;
 	camera[3][2] += camZ;
 
-
+	GLuint camera_position = glGetUniformLocation(shader_program, "cameraPosition");
+	glUniform3f(camera_position, camX, 0.0f, camZ);
 
 	return cgmath::mat4::inverse(camera);
 }
@@ -383,7 +453,7 @@ cgmath::mat4 scene_rain::rotateCameraMatrix(cgmath::mat4 m)
 		cgmath::vec4(0, 0, 0, 1)
 	);
 
-	return m*rotationY*rotationX;
+	return m * rotationY*rotationX;
 }
 
 cgmath::mat4 scene_rain::rotateParticleMatrix(cgmath::mat4 m)
@@ -391,7 +461,7 @@ cgmath::mat4 scene_rain::rotateParticleMatrix(cgmath::mat4 m)
 	float PI = 3.14159f;
 
 	cgmath::mat4 rotationZ = cgmath::mat4(
-		cgmath::vec4(cos(2 * PI / 12 *rotZ), sin(2 * PI / 12 * rotZ), 0, 0),
+		cgmath::vec4(cos(2 * PI / 12 * rotZ), sin(2 * PI / 12 * rotZ), 0, 0),
 		cgmath::vec4(-sin(2 * PI / 12 * rotZ), cos(2 * PI / 12 * rotZ), 0, 0),
 		cgmath::vec4(0, 0, 1, 0),
 		cgmath::vec4(0, 0, 0, 1)
@@ -412,7 +482,7 @@ cgmath::mat4 scene_rain::perspectiveMatrix(float width, float height)
 	return perspective;
 }
 
-void scene_rain::initializeVector() {
+void scene_rain::initializeBuffers() {
 	// Creacion y activacion del vao
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -432,7 +502,42 @@ void scene_rain::initializeVector() {
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	// A diferencia de los buffers de atributos, los buffers de indices deben permanecer activos. No hacemos unbind.
+	glGenBuffers(1, &normalizedVertexesVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, normalizedVertexesVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec3) * normalVectors.size(), normalVectors.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenVertexArrays(1, &vaoroom);
+	glBindVertexArray(vaoroom);
+
+	glGenBuffers(1, &roomPositionsVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, roomPositionsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec4) * room.size(), room.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &roomTextureCoordinatesVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, roomTextureCoordinatesVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec2) * roomTextureCoordinates.size(), roomTextureCoordinates.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &roomNormalVectorsVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, roomNormalVectorsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cgmath::vec3) * roomNormalVectors.size(), roomNormalVectors.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &roomIndexesBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, roomIndexesBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indexesRoom.size(), indexesRoom.data(), GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
 }
 
 float scene_rain::random()
@@ -440,24 +545,24 @@ float scene_rain::random()
 	int min = -1;
 	int max = 1;
 	float r = (float)rand() / (float)RAND_MAX;
-	float rndm= min + r * (max - min);
+	float rndm = min + r * (max - min);
 	return rndm;
 
 }
 
-void scene_rain::initializeParticles() //Solo inicializa el pool de particulas, las particulas se inicializan hasta que se activan (en el main loop)
+void scene_rain::initializePool() //Solo inicializa el pool de particulas, las particulas se inicializan hasta que se activan (en el main loop)
 {
-	float initialMean = 1500.0f;
+	float initialMean = 2000.0f;
 	float varianceParticles = 0.0f;
 	numberOfParticles = static_cast<int>(initialMean + random()*varianceParticles);
 
 	for (int i = 0; i < numberOfParticles; i++) {
-		
-		/*pos.push_back(initializePosition());
-		vel.push_back(initializeVelocities());
-		acel.push_back(initializeAcceleration());
-		ttl.push_back(initializeTimeToLive());*/
-		//magnitudes.push_back(std::make_tuple(i,-1));
+
+		pos.push_back(cgmath::vec3(0.0f,0.0f,0.0f));
+		vel.push_back(cgmath::vec3(0.0f, 0.0f, 0.0f));
+		acel.push_back(cgmath::vec3(0.0f, 0.0f, 0.0f));
+		ttl.push_back(0.0f);
+		magnitudes.push_back(std::make_tuple(i,-1));
 		isActive.push_back(false);
 	}
 }
@@ -466,24 +571,41 @@ void scene_rain::initializeParticles() //Solo inicializa el pool de particulas, 
 cgmath::vec3 scene_rain::initializePosition()
 {
 	float initialPosX = camX;
-	float initialPosY = 100.0f;
+	float initialPosY = 80.0f;
 	float initialPosZ = camZ;
 	float variancePosX = 100.0f;
-	float variancePosY = 50.0f;
+	float variancePosY = 40.0f;
 	float variancePosZ = 50.0f;
 
 	float randPosX = (initialPosX + random()*variancePosX);
 	float randPosY = (initialPosY + random()*variancePosY);
 	float randPosZ = (initialPosZ + random()*variancePosZ);
 
-	cgmath::vec3 v(randPosX,randPosY,randPosZ);
+	cgmath::vec3 v(randPosX, randPosY, randPosZ);
+	return v;
+}
+
+cgmath::vec3 scene_rain::initializeVelocities()
+{
+	float meanVel = 120.0f;
+	float varianceVel = 15.0f;
+	float meanXVel = 30.0f;
+	float xVelocity = 0.0f;
+	float variancexVel = 0.0f;
+
+	if (airX != 0) {
+		xVelocity = meanXVel + random()*variancexVel;
+	}
+
+	float yVelocity = -(meanVel + random()*varianceVel);
+	cgmath::vec3 v(0.0f, yVelocity, 0.0f);
 	return v;
 }
 
 cgmath::vec3 scene_rain::initializeAcceleration()
 {
 	float meanAccel = airX;
-	float varianceAccel = 2.0f;
+	float varianceAccel = 0.0f;
 	float acceleration = airX;
 
 	if (airX != 0) {
@@ -498,7 +620,7 @@ float scene_rain::initializeTimeToLive()
 {
 	float meanTtl = 8.5f;
 	float varianceTtl = 1.5f;
-	
+
 	float ttl = meanTtl + random()*varianceTtl;
 
 	return ttl;
@@ -506,43 +628,70 @@ float scene_rain::initializeTimeToLive()
 
 void scene_rain::activateParticle(int i)
 {
-	if (i>0 && i<pos.size()) { //Si la particula ya existe, borrala.
-		pos.erase(pos.begin() + i);
-		vel.erase(vel.begin() + i);
-		acel.erase(acel.begin() + i);
-		ttl.erase(ttl.begin() + i);
-		magnitudes.erase(magnitudes.begin() + i);
-	}
-	isActive.erase(isActive.begin() + i); //Borra esa referencia del pool
-	pos.insert(pos.begin(),initializePosition());
-	vel.insert(vel.begin(),initializeVelocities());
-	acel.insert(acel.begin(),initializeAcceleration());
-	ttl.insert(ttl.begin(),initializeTimeToLive());
-	magnitudes.insert(magnitudes.begin(),std::make_tuple(i, 0));
-	isActive.insert(isActive.begin(),true); //Inicializa la particula y activala (insertas los datos al principio del arreglo, no al final).
-	activeParticles -= 1;
+	//if (i > 0 && i < pos.size()) { //Si la particula ya existe, borrala.
+	//	pos.erase(pos.begin() + i);
+	//	vel.erase(vel.begin() + i);
+	//	acel.erase(acel.begin() + i);
+	//	ttl.erase(ttl.begin() + i);
+	//	magnitudes.erase(magnitudes.begin() + i);
+	//}
+	//isActive.erase(isActive.begin() + i); //Borra esa referencia del pool
+	//pos.insert(pos.begin(), initializePosition());
+	//vel.insert(vel.begin(), initializeVelocities());
+	//acel.insert(acel.begin(), initializeAcceleration());
+	//ttl.insert(ttl.begin(), initializeTimeToLive());
+	//magnitudes.insert(magnitudes.begin(), std::make_tuple(i, 0));
+	//isActive.insert(isActive.begin(), true); //Inicializa la particula y activala (insertas los datos al principio del arreglo, no al final).
+	//activeParticles -= 1.0f;
+
+	pos[i] = initializePosition();
+	vel[i] = initializeVelocities();
+	acel[i] = initializeAcceleration();
+	ttl[i] = initializeTimeToLive();
+	isActive[i] = true;
+	std::swap(pos[i], pos[totalAliveParticles]);
+	std::swap(vel[i], vel[totalAliveParticles]);
+	std::swap(acel[i], acel[totalAliveParticles]);
+	std::swap(ttl[i], ttl[totalAliveParticles]);
+	std::swap(isActive[i], isActive[totalAliveParticles]);
+	activeParticles -= 1.0f;
+
 }
 
-cgmath::vec3 scene_rain::initializeVelocities()
+void scene_rain::killParticle(int i)
 {
-	float meanVel = 100.0f;
-	float varianceVel = 5.0f;
+	//pos.erase(pos.begin() + i);
+	//vel.erase(vel.begin() + i);
+	//acel.erase(acel.begin() + i);
+	//ttl.erase(ttl.begin() + i);
+	//magnitudes.erase(magnitudes.begin() + i);
+	//isActive.erase(isActive.begin() + i);
+	//pos.push_back(cgmath::vec3(0.0f, 0.0f, 0.0f));
+	//vel.push_back(cgmath::vec3(0.0f, 0.0f, 0.0f));
+	//acel.push_back(cgmath::vec3(0.0f, 0.0f, 0.0f));
+	//ttl.push_back(0.0f);
+	//magnitudes.push_back(std::make_tuple(0, 0));
+	//isActive.push_back(false);
 
-	float velocity = -(meanVel + random()*varianceVel);
-	cgmath::vec3 v(0.0, velocity, 0.0f);
-	return v;
+	isActive[i] = false;
+	std::swap(pos[i], pos[totalAliveParticles-1]);
+	std::swap(vel[i], vel[totalAliveParticles-1]);
+	std::swap(acel[i], acel[totalAliveParticles-1]);
+	std::swap(ttl[i], ttl[totalAliveParticles-1]);
+	std::swap(isActive[i], isActive[totalAliveParticles-1]);
+	totalAliveParticles -= 1;
 }
 
 void scene_rain::updateParticles()
 {
 	for (int i = 0; i < totalAliveParticles; i++) {  //Actualiza las particulas vivas
-		if (ttl[i]>0) {
+		if (ttl[i] > 0) {
 			pos[i] = pos[i] + (vel[i])*(t::delta_time().count());
-			vel[i] = vel[i] + acel[i] * (t::delta_time().count());
+			vel[i] = vel[i] + (acel[i]) * (t::delta_time().count());
+			ttl[i] -= t::delta_time().count();
 		}
 		else {  //Si su tiempo de vida es 0, apagala y retirala del contador de particulas vivas.
-			isActive[i] = false;
-			totalAliveParticles -= 1;
+			killParticle(i);
 		}
 	}
 }
@@ -563,53 +712,3 @@ void scene_rain::sortParticles()
 	}
 	std::sort(magnitudes.begin(), magnitudes.end(), sortbysec);
 }
-
-//void scene_rain::swap(std::vector<float>& magnitudes,int a, int b)
-//{
-//	float temp = magnitudes[a];
-//	magnitudes[a] = magnitudes[b];
-//	magnitudes[b] = temp;
-//
-//	int tempIndices = indices[a];
-//	indices[a] = indices[b];
-//	indices[b] = tempIndices;
-//}
-//
-//void scene_rain::quicksort(std::vector<float>& magnitudes,int l, int r)
-//{
-//	// Base case: No need to sort arrays of length <= 1
-//	if (l >= r)
-//	{
-//		return;
-//	}
-//
-//	// Choose pivot to be the last element in the subarray
-//	float pivot = magnitudes[r];
-//
-//	// Index indicating the "split" between elements smaller than pivot and 
-//	// elements greater than pivot
-//	int cnt = l;
-//
-//	// Traverse through array from l to r
-//	for (int i = l; i <= r; i++)
-//	{
-//		// If an element less than or equal to the pivot is found...
-//		if (magnitudes[i] >= pivot)
-//		{
-//			// Then swap arr[cnt] and arr[i] so that the smaller element arr[i] 
-//			// is to the left of all elements greater than pivot
-//			swap(magnitudes, cnt, i);
-//
-//			// Make sure to increment cnt so we can keep track of what to swap
-//			// arr[i] with
-//			cnt++;
-//		}
-//	}
-//
-//	// NOTE: cnt is currently at one plus the pivot's index 
-//	// (Hence, the cnt-2 when recursively sorting the left side of pivot)
-//	quicksort(magnitudes, l, cnt - 2); // Recursively sort the left side of pivot
-//	quicksort(magnitudes, cnt, r);   // Recursively sort the right side of pivot
-//}
-//
-//

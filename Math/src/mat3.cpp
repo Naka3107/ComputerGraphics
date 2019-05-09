@@ -13,14 +13,18 @@ cgmath::mat3::mat3(const vec3& a, const vec3& b, const vec3& c) : n{ {a.x, a.y, 
 {
 }
 
+cgmath::mat3::mat3(const vec4& a, const vec4& b, const vec4& c) : n{ {a.x, a.y, a.z}, {b.x, b.y, b.z}, {c.x, c.y, c.z} }
+{
+}
+
 cgmath::vec3& cgmath::mat3::operator[](int column)
 {
-	return reinterpret_cast<vec3&>(n[column]);
+	return *reinterpret_cast<vec3*>(n[column]);
 }
 
 const cgmath::vec3& cgmath::mat3::operator[](int column) const
 {
-	return reinterpret_cast<const vec3&>(n[column]);
+	return *reinterpret_cast<const vec3*>(n[column]);
 }
 
 bool cgmath::mat3::operator==(const mat3& m) const

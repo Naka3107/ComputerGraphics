@@ -57,6 +57,9 @@
     <ClCompile Include="src\scene_rain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\scene_shadow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\scene_manager.h">
@@ -101,6 +104,9 @@
     <ClInclude Include="include\scene_rain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\scene_shadow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\circle.vert" />
@@ -120,5 +126,7 @@
     <None Include="shaders\shading.frag" />
     <None Include="shaders\rain.vert" />
     <None Include="shaders\rain.frag" />
+    <None Include="shaders\shadow.vert" />
+    <None Include="shaders\shadow.frag" />
   </ItemGroup>
 </Project>

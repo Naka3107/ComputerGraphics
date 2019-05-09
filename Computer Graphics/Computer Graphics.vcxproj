@@ -90,6 +90,7 @@
     <ClCompile Include="src\scene_primitives.cpp" />
     <ClCompile Include="src\scene_rain.cpp" />
     <ClCompile Include="src\scene_shading.cpp" />
+    <ClCompile Include="src\scene_shadow.cpp" />
     <ClCompile Include="src\scene_sphere.cpp" />
     <ClCompile Include="src\scene_texture.cpp" />
     <ClCompile Include="src\scene_vertex.cpp" />
@@ -114,6 +115,7 @@
     <ClInclude Include="include\scene_primitives.h" />
     <ClInclude Include="include\scene_rain.h" />
     <ClInclude Include="include\scene_shading.h" />
+    <ClInclude Include="include\scene_shadow.h" />
     <ClInclude Include="include\scene_sphere.h" />
     <ClInclude Include="include\scene_texture.h" />
     <ClInclude Include="include\scene_vertex.h" />
@@ -131,6 +133,8 @@
     <None Include="shaders\rain.vert" />
     <None Include="shaders\shading.frag" />
     <None Include="shaders\shading.vert" />
+    <None Include="shaders\shadow.frag" />
+    <None Include="shaders\shadow.vert" />
     <None Include="shaders\simple_pass.vert" />
     <None Include="shaders\solid_color.frag" />
     <None Include="shaders\sphere.vert" />

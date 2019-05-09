@@ -19,6 +19,7 @@
 #include "scene_texture.h"
 #include "scene_shading.h"
 #include "scene_rain.h"
+#include "scene_shadow.h"
 #include "t.h"
 
 std::vector<std::unique_ptr<scene>> scene_manager::sceneList;
@@ -50,7 +51,7 @@ void scene_manager::start(int argc, char* argv[], const std::string& name, int w
 
 	// OpenGL init
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	// GL version
 	std::cout << glGetString(GL_VERSION) << std::endl;
@@ -134,9 +135,12 @@ void scene_manager::initialize()
 
 	std::unique_ptr<scene> scene11(new scene_shading);
 	sceneList.push_back(std::move(scene11));
-
-	std::unique_ptr<scene> scene12(new scene_rain);
+	
+	std::unique_ptr<scene> scene12(new scene_shadow);
 	sceneList.push_back(std::move(scene12));
+
+	std::unique_ptr<scene> scene13(new scene_rain);
+	sceneList.push_back(std::move(scene13));
 
 	for (auto& s : sceneList)
 		s->init();

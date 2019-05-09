@@ -36,5 +36,4 @@ void main()
 	
 	FragColor = vec4(phong, 1.0);
 	
-
 }
