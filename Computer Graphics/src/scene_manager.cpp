@@ -56,8 +56,7 @@ void scene_manager::start(int argc, char* argv[], const std::string& name, int w
 	// GL version
 	std::cout << glGetString(GL_VERSION) << std::endl;
 
-	// Scene init
-	initialize();
+	
 
 	// Inicializar DevIL. Esto se debe hacer sólo una vez en
 	// todo el ciclo de vida del programa.
@@ -70,6 +69,8 @@ void scene_manager::start(int argc, char* argv[], const std::string& name, int w
 	// Configurar el punto de origen de las texturas en la esquina
 	// inferior izquierda
 	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
+	// Scene init
+	initialize();
 	// Run main loop
 	glutMainLoop();
 }
@@ -103,7 +104,7 @@ void scene_manager::initialize()
 	// Ejemplo de como agregar escenas al proyecto
 	//std::unique_ptr<scene> somescene(new scene_project);
 	//sceneList.push_back(std::move(somescene));
-	std::unique_ptr<scene> scene1(new scene_compatibility);
+	/*std::unique_ptr<scene> scene1(new scene_compatibility);
 	sceneList.push_back(std::move(scene1));
 
 	std::unique_ptr<scene> scene2(new scene_primitives);
@@ -137,10 +138,10 @@ void scene_manager::initialize()
 	sceneList.push_back(std::move(scene11));
 	
 	std::unique_ptr<scene> scene12(new scene_shadow);
-	sceneList.push_back(std::move(scene12));
+	sceneList.push_back(std::move(scene12));*/
 
-	std::unique_ptr<scene> scene13(new scene_rain);
-	sceneList.push_back(std::move(scene13));
+	std::unique_ptr<scene> scene1(new scene_shadow);
+	sceneList.push_back(std::move(scene1));
 
 	for (auto& s : sceneList)
 		s->init();

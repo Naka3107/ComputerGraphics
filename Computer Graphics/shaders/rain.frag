@@ -30,11 +30,11 @@ void main()
 	vec3 specular =  lightColor * pow(clamp(dot(lightVector, normalVector), 0.0, 1.0), 16.0);
 
 	// texture color
-	vec3 texture_color = texture2D(texture, textureCoords).xyz;
+	vec4 texture_color = texture2D(texture, textureCoords);
 
-	vec3 phong = (ambiental + diffuse + specular) * texture_color; 
+	vec4 phong = vec4(ambiental + diffuse + specular,1.0f) * texture_color; 
 	
-	FragColor = vec4(phong, 1.0);
+	FragColor = phong;
 	
 
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include <iostream>
 
+#include "vec4.h"
+
 namespace cgmath {
 	class vec3 {
 	public:
@@ -17,6 +19,7 @@ namespace cgmath {
 
 		vec3& operator*=(float s);
 		vec3& operator/=(float s);
+		vec3& operator*=(const vec4& v);
 		vec3& operator+=(const vec3& v);
 		vec3& operator-=(const vec3& v);
 

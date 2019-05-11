@@ -13,7 +13,6 @@ scene_rain::~scene_rain()
 	// la escena deja de existir.
 	glDeleteTextures(1, &texture1);
 	glDeleteTextures(1, &roomTexture);
-	glDeleteProgram(shader_program);
 }
 
 void scene_rain::init()
@@ -21,134 +20,24 @@ void scene_rain::init()
 	perspective = perspectiveMatrix(400.0f, 400.0f);
 	view = viewMatrix();
 
+	particlesShader.create();
+	particlesShader.attachShader("shaders/rain.vert", GL_VERTEX_SHADER);
+	particlesShader.attachShader("shaders/rain.frag", GL_FRAGMENT_SHADER);
+	particlesShader.setAttribute(0, "VertexPosition");
+	particlesShader.setAttribute(1, "TexturePosition");
+	particlesShader.setAttribute(2, "NormalPosition");
+	particlesShader.link();
+
+	particlesShader.activate();
+	particlesShader.setUniformi("texture", 0);
+	particlesShader.setUniformf("lightPosition", 5.0f, 10.0f, 10.0f);
+	particlesShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
+
 	srand(static_cast <unsigned> (time(0)));
 
 	initializePool();
-	initializeBuffers();
-	// ifile es parte del codigo que yo les doy
-	// El codigo fuente se encuentra en el proyecto Util
-	// Su unico proposito en la vida es leer archivos de texto
-	ifile shader_file;
-	// El metodo read recibe la ruta al archivo de texto a leer
-	// Si encuentra el archivo, intenta leerlo. En este caso,
-	// estamos intentando leer un archivo llamado grid,
-	// dentro de una carpeta shaders.
-	shader_file.read("shaders/rain.vert");
-	// Obtenemos los contenidos leidos en el paso anterior
-	// utilizando el metodo get_contents. Regresa un string
-	std::string vertex_source = shader_file.get_contents();
-	// OpenGL es un API de C, por lo que no trabaja con
-	// strings de C++. Tenemos que hacer un cast a un tipo de
-	// dato que OpenGL entienda. Podemos usar strings de C (char*)
-	// o utilizar el tipo de dato definido por OpenGL (GLchar*).
-	// Preferimos lo segundo.
-	const GLchar* vertex_source_c = (const GLchar*)vertex_source.c_str();
-	// Creamos el identificador para un vertex shader,
-	// utiliznado la funcion glCreateShader. La funcion
-	// regresa el identificador y lo guardamos en la variable
-	// vertex_shader.
-	GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	// Utilizando la funcion glShaderSource, indicamos que queremos
-	// enviar el codigo fuente del shader. La funcion espera:
-	// Identificador del shader (vertex_shader)
-	// Cuantos codigos fuentes queremos manadar (1)
-	// El código fuente (vertex_source_c)
-	// La longitud del codigo fuente. Si usamos nullptr, se
-	// asume que debe continuar leyendo hasta encontrar un nullptr.
-	glShaderSource(vertex_shader, 1, &vertex_source_c, nullptr);
-	// Compilamos el codigo fuente contenido en el shader
-	// con identificador vertex_shader.
-	glCompileShader(vertex_shader);
-
-	// Revision de errores de compilacion del vertex shader
-	GLint vertex_compiled;
-	glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &vertex_compiled);
-	if (vertex_compiled != GL_TRUE)
-	{
-		GLint log_length;
-		glGetShaderiv(vertex_shader, GL_INFO_LOG_LENGTH, &log_length);
-
-		std::vector<GLchar> log;
-		log.resize(log_length);
-		glGetShaderInfoLog(vertex_shader, log_length, &log_length, &log[0]);
-		std::cout << "Syntax errors in vertex shader: " << std::endl;
-		for (auto& c : log) std::cout << c;
-		std::cout << std::endl;
-	}
-
-	// Repetimos el mismo proceso, pero ahora para un
-	// fragment shader contenido en un archivo llamado
-	// solid_color.frag dentro de la carpeta shaders.
-	shader_file.read("shaders/rain.frag");
-	std::string fragment_source = shader_file.get_contents();
-	const GLchar* fragment_source_c = (const GLchar*)fragment_source.c_str();
-	// El identificador del shader lo creamos pero para un 
-	// shader de tipo fragment.
-	GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment_shader, 1, &fragment_source_c, nullptr);
-	glCompileShader(fragment_shader);
-
-	// Revision de errores de compilacion del fragment shader
-	GLint fragment_compiled;
-	glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &fragment_compiled);
-	if (fragment_compiled != GL_TRUE)
-	{
-		GLint log_length;
-		glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &log_length);
-
-		std::vector<GLchar> log;
-		log.resize(log_length);
-		glGetShaderInfoLog(fragment_shader, log_length, &log_length, &log[0]);
-		std::cout << "Syntax errors in fragment shader: " << std::endl;
-		for (auto& c : log) std::cout << c;
-		std::cout << std::endl;
-	}
-
-	// Una vez que hemos creado los shaders necesarios,
-	// creamos el manager utilizando la funcion glCreateProgram
-	// que regresa el id.
-	shader_program = glCreateProgram();
-	// Utilizamos glAttachShader para asociar un shader con el manager
-	// En este caso, shader_program es manager de vertex_shader
-	glAttachShader(shader_program, vertex_shader);
-	// En este caso, shader_program es manager de fragment_shader
-	glAttachShader(shader_program, fragment_shader);
-	glBindAttribLocation(shader_program, 0, "VertexPosition");
-	glBindAttribLocation(shader_program, 1, "TexturePosition");
-	glBindAttribLocation(shader_program, 2, "NormalPosition");
-	// Ejecutamos el proceso de linkeo. En esta etapa se busca
-	// que los shaders puedan trabajar en conjunto y todo este
-	// definido correctamente.
-	glLinkProgram(shader_program);
-
-	// Tambien deberiamos verificar que el proceso de linkeo
-	// termine sin errores. Por tiempo, asumimos que el
-	// resultado fue correcto.
-
-	// Borramos los shaders, porque ya tenemos el ejecutable
-	glDeleteShader(vertex_shader);
-	glDeleteShader(fragment_shader);
-
-	// Enviamos la resolucion de la ventana al inicio de la
-	// aplicacion. La variable es un uniform vec2.
-	// Tenemos que obtener la posicion de esa variable en el shader
-	// y asignarle un valor utilizando glUniform2f
-	glUseProgram(shader_program);
-	GLuint resolution_location = glGetUniformLocation(shader_program,
-		"iResolution");
-	glUniform2f(resolution_location, 400.0f, 400.0f);
-
-	// Inicializar DevIL. Esto se debe hacer sólo una vez en
-	// todo el ciclo de vida del programa.
-	ilInit();
-	// Cambiar el punto de origen de las texturas. Por default, DevIL
-	// pone un punto de origen en la esquina superior izquierda.
-	// Eso es compatible con el sistema operativo, pero no con el
-	// funcionamiento de OpenGL.
-	ilEnable(IL_ORIGIN_SET);
-	// Configurar el punto de origen de las texturas en la esquina
-	// inferior izquierda
-	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
+	initializeBuffers();			
+	
 	ILuint image1, image2;
 	ilGenImages(1, &image1);
 	ilBindImage(image1);
@@ -179,7 +68,7 @@ void scene_rain::init()
 
 	ilGenImages(1, &image2);
 	ilBindImage(image2);
-	ilLoadImage("images/room.jpg");
+	ilLoadImage("images/roomTexture.jpg");
 
 	glGenTextures(1, &roomTexture);
 	glBindTexture(GL_TEXTURE_2D, roomTexture);
@@ -204,16 +93,7 @@ void scene_rain::init()
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	GLuint textureLocation = glGetUniformLocation(shader_program, "texture");
-	glUniform1i(textureLocation, 0);
-
-	GLuint light_position = glGetUniformLocation(shader_program, "lightPosition");
-	glUniform3f(light_position, 5.0f, 10.0f, 10.0f);
-
-	GLuint light_color = glGetUniformLocation(shader_program, "lightColor");
-	glUniform3f(light_color, 1.0f, 1.0f, 1.0f);
-
-	glUseProgram(0);
+	particlesShader.deactivate();
 }
 
 void scene_rain::awake()
@@ -231,27 +111,121 @@ void scene_rain::sleep()
 	glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
-void scene_rain::mainLoop()
+void scene_rain::mainLoop() {
+	secondRender();
+}
+
+//void scene_rain::firstRender() {
+//	
+//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//	glUseProgram(shader_program);
+//	glBindVertexArray(vaoroom);  //Render del cuarto
+//
+//	GLuint modelMatrix = glGetUniformLocation(shader_program, "modelMatrix");
+//	GLuint normalMatrix = glGetUniformLocation(shader_program, "normalMatrix");
+//	GLuint mvpMatrix = glGetUniformLocation(shader_program, "mvpMatrix");
+//
+//	cgmath::mat4 model = 1.0f;
+//	glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
+//
+//	cgmath::mat4 mvp = perspective * view * model;
+//	glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
+//		reinterpret_cast<GLfloat*>(&mvp));
+//
+//	cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
+//	glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
+//
+//	glActiveTexture(GL_TEXTURE0);
+//	glBindTexture(GL_TEXTURE_2D, roomTexture);
+//
+//	glDrawElements(GL_TRIANGLES, indexesRoom.size(), GL_UNSIGNED_INT, nullptr);
+//
+//	glActiveTexture(GL_TEXTURE0);
+//	glBindTexture(GL_TEXTURE_2D, 0);
+//
+//	glBindVertexArray(0);
+//
+//
+//	glBindVertexArray(vao); //Render de las gotas
+//
+//	glActiveTexture(GL_TEXTURE0);
+//	glBindTexture(GL_TEXTURE_2D, texture1);
+//
+//	view = viewMatrix();
+//
+//	if (activeParticles <= emissionRate) {
+//		activeParticles += t::delta_time().count() * emissionRate;   //Calcula el flujo de particulas con respecto al tiempo y razón de emisión.
+//	}
+//
+//	if (activeParticles >= 1) { // Si es mayor o igual a uno, ya puede dibujar la particula
+//		for (int i = numberOfParticles - 1; i >= 0; i--) { //Por cada particula en el pool busca alguna que este apagada
+//			if (activeParticles < 1) {
+//				break;
+//			}
+//			else {
+//				if (!isActive[i]) {
+//					activateParticle(i);  //Si encuentras una apagada, préndela (al prenderse se van al inicio del arreglo, entonces estan en orden)
+//					totalAliveParticles += 1;  //Llevamos un contador de cuantas particulas existen, para que el sorteo y update de particulas lo haga SOLO con las que estan vivas, no con todas las particulas (mas eficiente)
+//				}
+//			}
+//		}
+//	}
+//	updateParticles();
+//	sortParticles();
+//
+//	int index = 0;
+//	model = (1.0f);
+//	model = rotateParticleMatrix(model);
+//
+//	for (int i = 0; i < totalAliveParticles; i++) {  //Solo dibuja las particulas activas
+//		index = std::get<0>(magnitudes[i]);
+//		model[3][0] = pos[index].x;
+//		model[3][1] = pos[index].y;
+//		model[3][2] = pos[index].z;
+//
+//		glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
+//
+//		cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
+//		glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
+//
+//		cgmath::mat4 mv = view * model;
+//		mv[0][0] = 1.0f; mv[2][0] = 0.0f;
+//		mv[0][1] = 0.0f; mv[2][1] = 0.0f;
+//		mv[0][2] = 0.0f; mv[2][2] = 1.0f;
+//		cgmath::mat4 mvp = perspective * mv;
+//		glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
+//			reinterpret_cast<GLfloat*>(&mvp));
+//		glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
+//	}
+//	glActiveTexture(GL_TEXTURE0);
+//	glBindTexture(GL_TEXTURE_2D, 0);
+//
+//	glBindVertexArray(0);
+//	glUseProgram(0);
+//}
+
+
+void scene_rain::secondRender()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDisable(GL_DEPTH_TEST);
 
-	glUseProgram(shader_program);
+
+	particlesShader.activate();
+	
 	glBindVertexArray(vaoroom);  //Render del cuarto
 
-	GLuint modelMatrix = glGetUniformLocation(shader_program, "modelMatrix");
-	GLuint normalMatrix = glGetUniformLocation(shader_program, "normalMatrix");
-	GLuint mvpMatrix = glGetUniformLocation(shader_program, "mvpMatrix");
+	view = viewMatrix();
+	particlesShader.setUniformf("cameraPosition", camPosition);
 
 	cgmath::mat4 model = 1.0f;
-	glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
+	particlesShader.setUniformMatrix("modelMatrix", model);
 
 	cgmath::mat4 mvp = perspective * view * model;
-	glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
-		reinterpret_cast<GLfloat*>(&mvp));
+	particlesShader.setUniformMatrix("mvpMatrix", mvp);
 
 	cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
-	glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
+	particlesShader.setUniformMatrix("normalMatrix", normal_matrix);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, roomTexture);
@@ -262,15 +236,14 @@ void scene_rain::mainLoop()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glBindVertexArray(0);
-
-
+	
 	glBindVertexArray(vao); //Render de las gotas
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture1);
 
-	view = viewMatrix();
-
+	
+	glDisable(GL_DEPTH_TEST);
 	if (activeParticles <= emissionRate) {
 		activeParticles += t::delta_time().count() * emissionRate;   //Calcula el flujo de particulas con respecto al tiempo y razón de emisión.
 	}
@@ -301,18 +274,17 @@ void scene_rain::mainLoop()
 		model[3][1] = pos[index].y;
 		model[3][2] = pos[index].z;
 
-		glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
+		particlesShader.setUniformMatrix("modelMatrix", model);
 
-		cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
-		glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
+		normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
+		particlesShader.setUniformMatrix("normalMatrix", normal_matrix);
 
 		cgmath::mat4 mv = view * model;
 		mv[0][0] = 1.0f; mv[2][0] = 0.0f;
 		mv[0][1] = 0.0f; mv[2][1] = 0.0f;
 		mv[0][2] = 0.0f; mv[2][2] = 1.0f;
 		cgmath::mat4 mvp = perspective * mv;
-		glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
-			reinterpret_cast<GLfloat*>(&mvp));
+		particlesShader.setUniformMatrix("mvpMatrix", mvp);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
 	}
 	glActiveTexture(GL_TEXTURE0);
@@ -321,7 +293,18 @@ void scene_rain::mainLoop()
 	glBindVertexArray(0);
 
 	glEnable(GL_DEPTH_TEST);
-	glUseProgram(0);
+	particlesShader.deactivate();
+
+	float t = t::delta_time().count();
+
+	if (aPressed) camPosition-=right*(distTras * t);
+	if (dPressed) camPosition+=right*(distTras * t);
+	if (wPressed) camPosition-=fwd*(distTras * t);
+	if (sPressed) camPosition+=fwd*(distTras * t);
+	if (jPressed) rotY+=(distRot * t);
+	if (lPressed) rotY-=(distRot * t);
+	if (kPressed && rotX>0) rotX-=(distRot * t);
+	if (iPressed && rotX<3) rotX+=(distRot * t);
 }
 
 void scene_rain::resize(int width, int height)
@@ -329,45 +312,19 @@ void scene_rain::resize(int width, int height)
 	perspective = perspectiveMatrix(width, height);
 
 	glViewport(0, 0, width, height);
-
-	glUseProgram(shader_program);
-	GLuint resolution_location =
-		glGetUniformLocation(shader_program, "iResolution");
-	glUniform2f(resolution_location, width, height);
-	glUseProgram(0);
 }
 
 void scene_rain::normalKeysDown(unsigned char key)
 {
 
-	if (key == 'w') {
-		camZ -= distTras;
-	}
-	if (key == 's') {
-		camZ += distTras;
-	}
-	if (key == 'a') {
-		camX -= distTras;
-	}
-	if (key == 'd') {
-		camX += distTras;
-	}
-	if (key == 'j') {
-		rotY += distRot;
-	}
-	if (key == 'l') {
-		rotY -= distRot;
-	}
-	if (key == 'k') {
-		if (rotX > 0) {
-			rotX -= distRot;
-		}
-	}
-	if (key == 'i') {
-		if (rotX < 3) {
-			rotX += distRot;
-		}
-	}
+	if (key == 'w') wPressed = true;
+	if (key == 's') sPressed = true;
+	if (key == 'a') aPressed = true;
+	if (key == 'd') dPressed = true;
+	if (key == 'j') jPressed = true;
+	if (key == 'l') lPressed = true;
+	if (key == 'k') kPressed = true;
+	if (key == 'i') iPressed = true;
 	if (key == 'e') {
 		if (airX < 70.0f) {
 			airX += 14.0f;
@@ -381,34 +338,12 @@ void scene_rain::normalKeysDown(unsigned char key)
 		}
 	}
 	if (key == 'o') {  //Agrega Partículas
-		//int add = 100;
-		//for (int i = 0; i < add; i++) {
-		//	pos.push_back(initializePosition());
-		//	acel.push_back(initializeAcceleration());
-		//	vel.push_back(initializeVelocities());
-		//	ttl.push_back(float(t::elapsed_time().count()));
-		//	magnitudes.push_back(std::make_tuple(numberOfParticles+i, 0));
-		//}
-		//numberOfParticles += add;
 
 		emissionRate += 50.0f;
 
 	}
 	if (key == 'u') {  //Quita Partículas
-		/*int sub = 100;
-		if (numberOfParticles > 100) {
-			magnitudes.clear();
-			for (int i = 0; i < sub; i++) {
-				pos.pop_back();
-				acel.pop_back();
-				vel.pop_back();
-				ttl.pop_back();
-			}
-			numberOfParticles -= sub;
-			for (int i = 0; i < numberOfParticles; i++) {
-				magnitudes.push_back(std::make_tuple(i, 0));
-			}
-		}*/
+	
 		if (emissionRate >= 50.0f) {
 			emissionRate -= 50.0f;
 		}
@@ -416,8 +351,23 @@ void scene_rain::normalKeysDown(unsigned char key)
 
 }
 
+void scene_rain::normalKeysUp(unsigned char key)
+{
+
+	if (key == 'w') wPressed = false;
+	if (key == 's') sPressed = false;
+	if (key == 'a') aPressed = false;
+	if (key == 'd') dPressed = false;
+	if (key == 'j') jPressed = false;
+	if (key == 'l') lPressed = false;
+	if (key == 'k') kPressed = false;
+	if (key == 'i') iPressed = false;
+}
+
 cgmath::mat4 scene_rain::viewMatrix()
 {
+	fwd = { 0,0,1 };
+	right = { 1,0,0 };
 	cgmath::mat4 original = cgmath::mat4(
 		cgmath::vec4(1, 0, 0, 0),
 		cgmath::vec4(0, 1, 0, 0),
@@ -426,11 +376,10 @@ cgmath::mat4 scene_rain::viewMatrix()
 	);
 
 	cgmath::mat4 camera = rotateCameraMatrix(original);
-	camera[3][0] += camX;
-	camera[3][2] += camZ;
-
-	GLuint camera_position = glGetUniformLocation(shader_program, "cameraPosition");
-	glUniform3f(camera_position, camX, 0.0f, camZ);
+	fwd *= camera[2];
+	right *= camera[0];
+	camera[3][0] = camPosition.x;
+	camera[3][2] = camPosition.z;
 
 	return cgmath::mat4::inverse(camera);
 }
@@ -570,9 +519,9 @@ void scene_rain::initializePool() //Solo inicializa el pool de particulas, las p
 
 cgmath::vec3 scene_rain::initializePosition()
 {
-	float initialPosX = camX;
+	float initialPosX = camPosition.x;
 	float initialPosY = 80.0f;
-	float initialPosZ = camZ;
+	float initialPosZ = camPosition.z;
 	float variancePosX = 100.0f;
 	float variancePosY = 40.0f;
 	float variancePosZ = 50.0f;
@@ -628,22 +577,6 @@ float scene_rain::initializeTimeToLive()
 
 void scene_rain::activateParticle(int i)
 {
-	//if (i > 0 && i < pos.size()) { //Si la particula ya existe, borrala.
-	//	pos.erase(pos.begin() + i);
-	//	vel.erase(vel.begin() + i);
-	//	acel.erase(acel.begin() + i);
-	//	ttl.erase(ttl.begin() + i);
-	//	magnitudes.erase(magnitudes.begin() + i);
-	//}
-	//isActive.erase(isActive.begin() + i); //Borra esa referencia del pool
-	//pos.insert(pos.begin(), initializePosition());
-	//vel.insert(vel.begin(), initializeVelocities());
-	//acel.insert(acel.begin(), initializeAcceleration());
-	//ttl.insert(ttl.begin(), initializeTimeToLive());
-	//magnitudes.insert(magnitudes.begin(), std::make_tuple(i, 0));
-	//isActive.insert(isActive.begin(), true); //Inicializa la particula y activala (insertas los datos al principio del arreglo, no al final).
-	//activeParticles -= 1.0f;
-
 	pos[i] = initializePosition();
 	vel[i] = initializeVelocities();
 	acel[i] = initializeAcceleration();
@@ -660,19 +593,6 @@ void scene_rain::activateParticle(int i)
 
 void scene_rain::killParticle(int i)
 {
-	//pos.erase(pos.begin() + i);
-	//vel.erase(vel.begin() + i);
-	//acel.erase(acel.begin() + i);
-	//ttl.erase(ttl.begin() + i);
-	//magnitudes.erase(magnitudes.begin() + i);
-	//isActive.erase(isActive.begin() + i);
-	//pos.push_back(cgmath::vec3(0.0f, 0.0f, 0.0f));
-	//vel.push_back(cgmath::vec3(0.0f, 0.0f, 0.0f));
-	//acel.push_back(cgmath::vec3(0.0f, 0.0f, 0.0f));
-	//ttl.push_back(0.0f);
-	//magnitudes.push_back(std::make_tuple(0, 0));
-	//isActive.push_back(false);
-
 	isActive[i] = false;
 	std::swap(pos[i], pos[totalAliveParticles-1]);
 	std::swap(vel[i], vel[totalAliveParticles-1]);
@@ -703,12 +623,10 @@ bool sortbysec(const std::tuple<int, float>& a, const std::tuple<int, float>& b)
 
 void scene_rain::sortParticles()
 {
-	cgmath::vec3 cameraPosition = { camX, 0, camZ };
-
 	for (int i = 0; i < totalAliveParticles; i++) { //Solamente sortea las particulas vivas
-		cgmath::vec3 vector = pos[i] - cameraPosition;
+		cgmath::vec3 vector = pos[i] - camPosition;
 		std::get<1>(magnitudes[i]) = vector.magnitudeNoSqrt();
 		std::get<0>(magnitudes[i]) = i;  //Se asignan un nuevo indice a cada particula, y sobre la magnitud sortea.
 	}
-	std::sort(magnitudes.begin(), magnitudes.end(), sortbysec);
+	std::sort(magnitudes.begin(), magnitudes.begin()+totalAliveParticles, sortbysec);
 }

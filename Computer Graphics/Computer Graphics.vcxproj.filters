@@ -60,6 +60,15 @@
     <ClCompile Include="src\scene_shadow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\depth_buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader_program.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\scene_manager.h">
@@ -107,6 +116,15 @@
     <ClInclude Include="include\scene_shadow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\depth_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\shader_program.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\circle.vert" />
@@ -128,5 +146,7 @@
     <None Include="shaders\rain.frag" />
     <None Include="shaders\shadow.vert" />
     <None Include="shaders\shadow.frag" />
+    <None Include="shaders\depth.frag" />
+    <None Include="shaders\depth.vert" />
   </ItemGroup>
 </Project>

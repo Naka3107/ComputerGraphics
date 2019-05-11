@@ -79,6 +79,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\depth_buffer.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\scene_chaikin.cpp" />
     <ClCompile Include="src\scene_circle.cpp" />
@@ -94,6 +95,8 @@
     <ClCompile Include="src\scene_sphere.cpp" />
     <ClCompile Include="src\scene_texture.cpp" />
     <ClCompile Include="src\scene_vertex.cpp" />
+    <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\shader_program.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Math\Math.vcxproj">
@@ -104,6 +107,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\depth_buffer.h" />
     <ClInclude Include="include\scene.h" />
     <ClInclude Include="include\scene_chaikin.h" />
     <ClInclude Include="include\scene_circle.h" />
@@ -119,6 +123,8 @@
     <ClInclude Include="include\scene_sphere.h" />
     <ClInclude Include="include\scene_texture.h" />
     <ClInclude Include="include\scene_vertex.h" />
+    <ClInclude Include="include\shader.h" />
+    <ClInclude Include="include\shader_program.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\circle.vert" />
@@ -126,6 +132,8 @@
     <None Include="shaders\colors.frag" />
     <None Include="shaders\cube.frag" />
     <None Include="shaders\cube.vert" />
+    <None Include="shaders\depth.frag" />
+    <None Include="shaders\depth.vert" />
     <None Include="shaders\grid.vert" />
     <None Include="shaders\palmtree.frag" />
     <None Include="shaders\positions.vert" />
