@@ -1,10 +1,10 @@
 #pragma once
 
-#include "scene.h"
+#include <GL/glew.h>
 
 // Escena de prueba para comenzar a trabajar con
 // fragment shaders.
-class depth_buffer : public scene
+class depth_buffer
 {
 public:
 	~depth_buffer();

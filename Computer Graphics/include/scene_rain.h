@@ -2,6 +2,7 @@
 
 #include "scene.h"
 #include "shader_program.h"
+#include "depth_buffer.h"
 #include <vector>
 #include <tuple>
 #include "vec2.h"
@@ -31,7 +32,10 @@ public:
 	void normalKeysDown(unsigned char key);
 
 private:
+	depth_buffer buffer;
+
 	shader_program particlesShader;
+	shader_program depthShader;
 
 	GLuint vao;
 	GLuint vaoroom;
@@ -120,9 +124,16 @@ private:
 
 	cgmath::mat4 modelMatrix();
 	cgmath::mat4 viewMatrix();
+	cgmath::mat4 depthViewMatrix();
 	cgmath::mat4 rotateCameraMatrix(cgmath::mat4 m);
 	cgmath::mat4 rotateParticleMatrix(cgmath::mat4 m);
 	cgmath::mat4 perspectiveMatrix(float width, float height);
+	cgmath::mat4 ortographicMatrix();
+	cgmath::mat4 rotateDepthCameraMatrix(cgmath::mat4 m);
 	cgmath::mat4 view;
+	cgmath::mat4 model;
+	cgmath::mat4 mvp;
+	cgmath::mat4 depthView;
 	cgmath::mat4 perspective;
+	cgmath::mat4 ortographic;
 };

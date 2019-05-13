@@ -18,7 +18,9 @@ scene_rain::~scene_rain()
 void scene_rain::init()
 {
 	perspective = perspectiveMatrix(400.0f, 400.0f);
+	ortographic = ortographicMatrix();
 	view = viewMatrix();
+	depthView = depthViewMatrix();
 
 	particlesShader.create();
 	particlesShader.attachShader("shaders/rain.vert", GL_VERTEX_SHADER);
@@ -29,9 +31,18 @@ void scene_rain::init()
 	particlesShader.link();
 
 	particlesShader.activate();
-	particlesShader.setUniformi("texture", 0);
-	particlesShader.setUniformf("lightPosition", 5.0f, 10.0f, 10.0f);
+	particlesShader.setUniformi("colorTexture", 0);
+	particlesShader.setUniformi("depthTexture", 1);
+	particlesShader.setUniformf("lightPosition", 0.0f, 50.0f, 50.0f);
 	particlesShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
+	particlesShader.deactivate();
+
+	depthShader.create();
+	depthShader.attachShader("shaders/depth.vert", GL_VERTEX_SHADER);
+	depthShader.attachShader("shaders/depth.frag", GL_FRAGMENT_SHADER);
+	depthShader.setAttribute(0, "VertexPosition");
+	depthShader.setAttribute(1, "TexturePosition");
+	depthShader.link();
 
 	srand(static_cast <unsigned> (time(0)));
 
@@ -92,8 +103,6 @@ void scene_rain::init()
 	ilDeleteImages(1, &image2);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	particlesShader.deactivate();
 }
 
 void scene_rain::awake()
@@ -112,98 +121,70 @@ void scene_rain::sleep()
 }
 
 void scene_rain::mainLoop() {
+
+	if (activeParticles <= emissionRate) {
+		activeParticles += t::delta_time().count() * emissionRate;   //Calcula el flujo de particulas con respecto al tiempo y razón de emisión.
+	}
+
+	if (activeParticles >= 1) { // Si es mayor o igual a uno, ya puede dibujar la particula
+		for (int i = numberOfParticles - 1; i >= 0; i--) { //Por cada particula en el pool busca alguna que este apagada
+			if (activeParticles < 1) {
+				break;
+			}
+			else {
+				if (!isActive[i]) {
+					activateParticle(i);  //Si encuentras una apagada, préndela (al prenderse se van al inicio del arreglo, entonces estan en orden)
+					totalAliveParticles += 1;  //Llevamos un contador de cuantas particulas existen, para que el sorteo y update de particulas lo haga SOLO con las que estan vivas, no con todas las particulas (mas eficiente)
+				}
+			}
+		}
+	}
+	updateParticles();
+	sortParticles();
+
+	firstRender();
 	secondRender();
 }
 
-//void scene_rain::firstRender() {
-//	
-//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//	glUseProgram(shader_program);
-//	glBindVertexArray(vaoroom);  //Render del cuarto
-//
-//	GLuint modelMatrix = glGetUniformLocation(shader_program, "modelMatrix");
-//	GLuint normalMatrix = glGetUniformLocation(shader_program, "normalMatrix");
-//	GLuint mvpMatrix = glGetUniformLocation(shader_program, "mvpMatrix");
-//
-//	cgmath::mat4 model = 1.0f;
-//	glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
-//
-//	cgmath::mat4 mvp = perspective * view * model;
-//	glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
-//		reinterpret_cast<GLfloat*>(&mvp));
-//
-//	cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
-//	glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
-//
-//	glActiveTexture(GL_TEXTURE0);
-//	glBindTexture(GL_TEXTURE_2D, roomTexture);
-//
-//	glDrawElements(GL_TRIANGLES, indexesRoom.size(), GL_UNSIGNED_INT, nullptr);
-//
-//	glActiveTexture(GL_TEXTURE0);
-//	glBindTexture(GL_TEXTURE_2D, 0);
-//
-//	glBindVertexArray(0);
-//
-//
-//	glBindVertexArray(vao); //Render de las gotas
-//
-//	glActiveTexture(GL_TEXTURE0);
-//	glBindTexture(GL_TEXTURE_2D, texture1);
-//
-//	view = viewMatrix();
-//
-//	if (activeParticles <= emissionRate) {
-//		activeParticles += t::delta_time().count() * emissionRate;   //Calcula el flujo de particulas con respecto al tiempo y razón de emisión.
-//	}
-//
-//	if (activeParticles >= 1) { // Si es mayor o igual a uno, ya puede dibujar la particula
-//		for (int i = numberOfParticles - 1; i >= 0; i--) { //Por cada particula en el pool busca alguna que este apagada
-//			if (activeParticles < 1) {
-//				break;
-//			}
-//			else {
-//				if (!isActive[i]) {
-//					activateParticle(i);  //Si encuentras una apagada, préndela (al prenderse se van al inicio del arreglo, entonces estan en orden)
-//					totalAliveParticles += 1;  //Llevamos un contador de cuantas particulas existen, para que el sorteo y update de particulas lo haga SOLO con las que estan vivas, no con todas las particulas (mas eficiente)
-//				}
-//			}
-//		}
-//	}
-//	updateParticles();
-//	sortParticles();
-//
-//	int index = 0;
-//	model = (1.0f);
-//	model = rotateParticleMatrix(model);
-//
-//	for (int i = 0; i < totalAliveParticles; i++) {  //Solo dibuja las particulas activas
-//		index = std::get<0>(magnitudes[i]);
-//		model[3][0] = pos[index].x;
-//		model[3][1] = pos[index].y;
-//		model[3][2] = pos[index].z;
-//
-//		glUniformMatrix4fv(modelMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
-//
-//		cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
-//		glUniformMatrix3fv(normalMatrix, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normal_matrix));
-//
-//		cgmath::mat4 mv = view * model;
-//		mv[0][0] = 1.0f; mv[2][0] = 0.0f;
-//		mv[0][1] = 0.0f; mv[2][1] = 0.0f;
-//		mv[0][2] = 0.0f; mv[2][2] = 1.0f;
-//		cgmath::mat4 mvp = perspective * mv;
-//		glUniformMatrix4fv(mvpMatrix, 1, GL_FALSE,
-//			reinterpret_cast<GLfloat*>(&mvp));
-//		glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
-//	}
-//	glActiveTexture(GL_TEXTURE0);
-//	glBindTexture(GL_TEXTURE_2D, 0);
-//
-//	glBindVertexArray(0);
-//	glUseProgram(0);
-//}
+void scene_rain::firstRender() {
+	buffer.bind();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	depthShader.activate();
+	glBindVertexArray(vaoroom);  //Render del cuarto
+
+	model = 1.0f;
+	mvp = perspective * depthView * model;
+	depthShader.setUniformMatrix("mvpMatrix", mvp);
+
+	glDrawElements(GL_TRIANGLES, indexesRoom.size(), GL_UNSIGNED_INT, nullptr);
+	glBindVertexArray(0);
+
+	glBindVertexArray(vao); //Render de las gotas
+
+	int index = 0;
+	model = (1.0f);
+	model = rotateParticleMatrix(model);
+
+	for (int i = 0; i < totalAliveParticles; i++) {  //Solo dibuja las particulas activas
+		index = std::get<0>(magnitudes[i]);
+		model[3][0] = pos[index].x;
+		model[3][1] = pos[index].y;
+		model[3][2] = pos[index].z;
+
+		cgmath::mat4 mv = depthView * model;
+		mv[0][0] = 1.0f; mv[2][0] = 0.0f;
+		mv[0][1] = 0.0f; mv[2][1] = 0.0f;
+		mv[0][2] = 0.0f; mv[2][2] = 1.0f;
+		mvp = perspective * mv;
+		depthShader.setUniformMatrix("mvpMatrix", mvp);
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
+	}
+
+	glBindVertexArray(0);
+	buffer.unbind();
+}
 
 
 void scene_rain::secondRender()
@@ -384,6 +365,34 @@ cgmath::mat4 scene_rain::viewMatrix()
 	return cgmath::mat4::inverse(camera);
 }
 
+cgmath::mat4 scene_rain::depthViewMatrix()
+{
+	cgmath::mat4 original = cgmath::mat4(
+		cgmath::vec4(1, 0, 0, 0),
+		cgmath::vec4(0, 1, 0, 0),
+		cgmath::vec4(0, 0, 1, 0),
+		cgmath::vec4(0, 50, 50, 1)
+	);
+	cgmath::mat4 camera = rotateDepthCameraMatrix(original);
+
+	return cgmath::mat4::inverse(camera);
+}
+
+cgmath::mat4 scene_rain::rotateDepthCameraMatrix(cgmath::mat4 m)
+{
+	float PI = 3.14159f;
+
+	cgmath::mat4 rotationX = cgmath::mat4(
+		cgmath::vec4(1, 0, 0, 0),
+		cgmath::vec4(0, cos(-PI / 4), sin(-PI / 4), 0),
+		cgmath::vec4(0, -sin(-PI / 4), cos(-PI / 4), 0),
+		cgmath::vec4(0, 0, 0, 1)
+	);
+
+	return m * rotationX;
+}
+
+
 cgmath::mat4 scene_rain::rotateCameraMatrix(cgmath::mat4 m)
 {
 	float PI = 3.14159f;
@@ -429,6 +438,23 @@ cgmath::mat4 scene_rain::perspectiveMatrix(float width, float height)
 		cgmath::vec4(0, 0, -2 * 1000 * 1 / (1000.0f - 1.0f), 0)
 	);
 	return perspective;
+}
+
+cgmath::mat4 scene_rain::ortographicMatrix()
+{
+	int right = 1000;
+	int left = -1000;
+	int top = 1000;
+	int bottom = -1000;
+	int far = 1000;
+	int near = -1000;
+	cgmath::mat4 ortographic = cgmath::mat4(
+		cgmath::vec4(2 / (right - left), 0, 0, 0),
+		cgmath::vec4(0, 2 / (top - bottom), 0, 0),
+		cgmath::vec4(0, 0, -2 / (far - near), 0),
+		cgmath::vec4(-(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1)
+	);
+	return ortographic;
 }
 
 void scene_rain::initializeBuffers() {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "scene.h"
+#include "depth_buffer.h"
 #include "shader_program.h"
 #include <vector>
 #include "vec2.h"
@@ -30,7 +31,8 @@ public:
 	void passiveMotion(int x, int y) { }
 
 private:
-	
+	depth_buffer buffer;
+
 	shader_program cubeShader;
 	shader_program depthShader;
 

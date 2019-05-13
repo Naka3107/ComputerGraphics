@@ -104,7 +104,7 @@ void scene_manager::initialize()
 	// Ejemplo de como agregar escenas al proyecto
 	//std::unique_ptr<scene> somescene(new scene_project);
 	//sceneList.push_back(std::move(somescene));
-	/*std::unique_ptr<scene> scene1(new scene_compatibility);
+	std::unique_ptr<scene> scene1(new scene_compatibility);
 	sceneList.push_back(std::move(scene1));
 
 	std::unique_ptr<scene> scene2(new scene_primitives);
@@ -138,10 +138,10 @@ void scene_manager::initialize()
 	sceneList.push_back(std::move(scene11));
 	
 	std::unique_ptr<scene> scene12(new scene_shadow);
-	sceneList.push_back(std::move(scene12));*/
+	sceneList.push_back(std::move(scene12));
 
-	std::unique_ptr<scene> scene1(new scene_shadow);
-	sceneList.push_back(std::move(scene1));
+	std::unique_ptr<scene> scene13(new scene_rain);
+	sceneList.push_back(std::move(scene13));
 
 	for (auto& s : sceneList)
 		s->init();

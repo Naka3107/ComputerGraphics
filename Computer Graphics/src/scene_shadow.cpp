@@ -33,11 +33,19 @@ void scene_shadow::init()
 	cubeShader.link();
 
 	cubeShader.activate();
-	cubeShader.setUniformi("texture", 0);
-	cubeShader.setUniformf("lightPosition", 0.0f, 15.0f, 0.0f);
+	cubeShader.setUniformi("colorTexture", 0);
+	cubeShader.setUniformi("depthTexture", 1);
+	cubeShader.setUniformf("lightPosition", 0.0f, 50.0f, 0.0f);
 	cubeShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
 	cubeShader.setUniformf("cameraPosition", 0.0f, 0.0f, 0.0f);
 	cubeShader.deactivate();
+
+	depthShader.create();
+	depthShader.attachShader("shaders/depth.vert", GL_VERTEX_SHADER);
+	depthShader.attachShader("shaders/depth.frag", GL_FRAGMENT_SHADER);
+	depthShader.setAttribute(0, "VertexPosition");
+	depthShader.setAttribute(1, "TexturePosition");
+	depthShader.link();
 
 	ILuint image1, image2;
 	ilGenImages(1, &image1);
@@ -93,12 +101,6 @@ void scene_shadow::init()
 	ilDeleteImages(1, &image2);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	depthShader.create();
-	depthShader.attachShader("shaders/depth.vert", GL_VERTEX_SHADER);
-	depthShader.attachShader("shaders/depth.frag", GL_FRAGMENT_SHADER);
-	depthShader.setAttribute(0, "VertexPosition");
-	depthShader.link();
 }
 
 void scene_shadow::awake()
@@ -115,10 +117,11 @@ void scene_shadow::sleep()
 
 void scene_shadow::mainLoop() {
 	firstRender();
-	//secondRender();
+	secondRender();
 }
 
 void scene_shadow::firstRender() {
+	buffer.bind();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	depthShader.activate();
 
@@ -126,29 +129,30 @@ void scene_shadow::firstRender() {
 
 	model = modelMatrix();
 
-	mvp = perspective * view * model;
+	mvp = perspective * depthView * model;
 	depthShader.setUniformMatrix("mvpMatrix", mvp);
 
 	glDrawElements(GL_TRIANGLES, indexesCube.size(), GL_UNSIGNED_INT, nullptr);
 
 	glBindVertexArray(0);
 
-	/*glBindVertexArray(vaoroom);
+	glBindVertexArray(vaoroom);
 
 	model=cgmath::mat4(1.0f);
-	mvp = perspective * view * model;
+	mvp = perspective * depthView * model;
 	depthShader.setUniformMatrix("mvpMatrix", mvp);
 
 	glDrawElements(GL_TRIANGLES, indexesRoom.size(), GL_UNSIGNED_INT, nullptr);
 
-	glBindVertexArray(0);*/
+	glBindVertexArray(0);
 	depthShader.deactivate();
+	buffer.unbind();
 }
 
 void scene_shadow::secondRender()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+
 	cubeShader.activate();
 
 	glBindVertexArray(vaoCube);
@@ -156,16 +160,25 @@ void scene_shadow::secondRender()
 	cgmath::mat4 model = modelMatrix();
 	cubeShader.setUniformMatrix("modelMatrix", model);
 
-	mvp = perspective * view * model;
+	mvp = perspective * depthView * model;
 	cubeShader.setUniformMatrix("mvpMatrix", mvp);
 
 	cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
 	cubeShader.setUniformMatrix("normalMatrix", normal_matrix);
 
+	/*cgmath::mat4 mv = perspective * depthView;
+	depthShader.setUniformMatrix("lightMatrix", mv);
+*/
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, cubeTexture);
 
+	glActiveTexture(GL_TEXTURE1);
+	buffer.bindDepthMap();
+
 	glDrawElements(GL_TRIANGLES, indexesCube.size(), GL_UNSIGNED_INT, nullptr);
+
+	glActiveTexture(GL_TEXTURE1);
+	buffer.unbindDepthMap();
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -173,20 +186,24 @@ void scene_shadow::secondRender()
 	glBindVertexArray(0);
 
 	glBindVertexArray(vaoroom);
-	
+
 	model = 1.0f;
 	cubeShader.setUniformMatrix("modelMatrix", model);
 
-	mvp = perspective * view * model;
+	mvp = perspective *depthView * model;
 	cubeShader.setUniformMatrix("mvpMatrix", mvp);
 
 	normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
 	cubeShader.setUniformMatrix("normalMatrix", normal_matrix);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, roomTexture);
+	glActiveTexture(GL_TEXTURE1);
+	buffer.bindDepthMap();
 
 	glDrawElements(GL_TRIANGLES, indexesRoom.size(), GL_UNSIGNED_INT, nullptr);
 
+	glActiveTexture(GL_TEXTURE1);
+	buffer.unbindDepthMap();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -232,14 +249,14 @@ cgmath::mat4 scene_shadow::modelMatrix()
 
 cgmath::mat4 scene_shadow::viewMatrix()
 {
-	cgmath::mat4 camera = cgmath::mat4(
+	cgmath::mat4 original = cgmath::mat4(
 		cgmath::vec4(1, 0, 0, 0),
 		cgmath::vec4(0, 1, 0, 0),
 		cgmath::vec4(0, 0, 1, 0),
-		cgmath::vec4(0, 0, 30, 1)
-	);
+		cgmath::vec4(0, 0, 50, 1)
+	);	
 
-	return cgmath::mat4::inverse(camera);
+	return cgmath::mat4::inverse(original);
 }
 
 cgmath::mat4 scene_shadow::depthViewMatrix()
@@ -248,11 +265,11 @@ cgmath::mat4 scene_shadow::depthViewMatrix()
 		cgmath::vec4(1, 0, 0, 0),
 		cgmath::vec4(0, 1, 0, 0),
 		cgmath::vec4(0, 0, 1, 0),
-		cgmath::vec4(0, 0, 0, 1)
+		cgmath::vec4(0, 50, 0, 1)
 	);
-	//cgmath::mat4 camera = rotateDepthCameraMatrix(original);
+	cgmath::mat4 camera = rotateDepthCameraMatrix(original);
 
-	return cgmath::mat4::inverse(original);
+	return cgmath::mat4::inverse(camera);
 }
 
 cgmath::mat4 scene_shadow::rotateDepthCameraMatrix(cgmath::mat4 m)
@@ -261,8 +278,8 @@ cgmath::mat4 scene_shadow::rotateDepthCameraMatrix(cgmath::mat4 m)
 
 	cgmath::mat4 rotationX = cgmath::mat4(
 		cgmath::vec4(1, 0, 0, 0),
-		cgmath::vec4(0, cos(PI/2), sin(PI/2), 0),
-		cgmath::vec4(0, -sin(PI/2), cos(PI/2), 0),
+		cgmath::vec4(0, cos(-PI/2), sin(-PI/2), 0),
+		cgmath::vec4(0, -sin(-PI/2), cos(-PI/2), 0),
 		cgmath::vec4(0, 0, 0, 1)
 	);
 
@@ -283,12 +300,12 @@ cgmath::mat4 scene_shadow::perspectiveMatrix(float width, float height)
 
 cgmath::mat4 scene_shadow::ortographicMatrix()
 {
-	int right = 120;
-	int left = -120;
-	int top = 120;
-	int bottom = -120;
-	int far = 120;
-	int near = -120;
+	int right = 1000;
+	int left = -1000;
+	int top = 1000;
+	int bottom = -1000;
+	int far = 1000;
+	int near = -1000;
 	cgmath::mat4 ortographic = cgmath::mat4(
 		cgmath::vec4(2/(right-left), 0, 0, 0),
 		cgmath::vec4(0, 2 / (top-bottom), 0, 0),
