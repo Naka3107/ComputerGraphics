@@ -33,7 +33,7 @@ void scene_rain::init()
 	particlesShader.activate();
 	particlesShader.setUniformi("colorTexture", 0);
 	particlesShader.setUniformi("depthTexture", 1);
-	particlesShader.setUniformf("lightPosition", 0.0f, 50.0f, 50.0f);
+	particlesShader.setUniformf("lightPosition", 0.0f, 35.0f, 0.0f);
 	particlesShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
 	particlesShader.deactivate();
 
@@ -225,25 +225,6 @@ void scene_rain::secondRender()
 
 	
 	glDisable(GL_DEPTH_TEST);
-	if (activeParticles <= emissionRate) {
-		activeParticles += t::delta_time().count() * emissionRate;   //Calcula el flujo de particulas con respecto al tiempo y razón de emisión.
-	}
-
-	if (activeParticles >= 1) { // Si es mayor o igual a uno, ya puede dibujar la particula
-		for (int i = numberOfParticles-1; i >= 0 ; i--) { //Por cada particula en el pool busca alguna que este apagada
-			if (activeParticles < 1) {
-				break;
-			}
-			else {
-				if (!isActive[i]) {
-					activateParticle(i);  //Si encuentras una apagada, préndela (al prenderse se van al inicio del arreglo, entonces estan en orden)
-					totalAliveParticles += 1;  //Llevamos un contador de cuantas particulas existen, para que el sorteo y update de particulas lo haga SOLO con las que estan vivas, no con todas las particulas (mas eficiente)
-				}
-			}
-		}
-	}
-	updateParticles();
-	sortParticles();
 
 	int index = 0;
 	model = (1.0f);
@@ -371,7 +352,7 @@ cgmath::mat4 scene_rain::depthViewMatrix()
 		cgmath::vec4(1, 0, 0, 0),
 		cgmath::vec4(0, 1, 0, 0),
 		cgmath::vec4(0, 0, 1, 0),
-		cgmath::vec4(0, 50, 50, 1)
+		cgmath::vec4(0, 35, 0, 1)
 	);
 	cgmath::mat4 camera = rotateDepthCameraMatrix(original);
 
