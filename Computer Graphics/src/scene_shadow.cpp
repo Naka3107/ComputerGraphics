@@ -47,6 +47,8 @@ void scene_shadow::init()
 	depthShader.setAttribute(1, "TexturePosition");
 	depthShader.link();
 
+	buffer.create(2048);
+
 	ILuint image1, image2;
 	ilGenImages(1, &image1);
 	ilBindImage(image1);
@@ -129,7 +131,7 @@ void scene_shadow::firstRender() {
 
 	model = modelMatrix();
 
-	mvp = perspective * depthView * model;
+	mvp = ortographic * depthView * model;
 	depthShader.setUniformMatrix("mvpMatrix", mvp);
 
 	glDrawElements(GL_TRIANGLES, indexesCube.size(), GL_UNSIGNED_INT, nullptr);
@@ -139,7 +141,7 @@ void scene_shadow::firstRender() {
 	glBindVertexArray(vaoroom);
 
 	model=cgmath::mat4(1.0f);
-	mvp = perspective * depthView * model;
+	mvp = ortographic * depthView * model;
 	depthShader.setUniformMatrix("mvpMatrix", mvp);
 
 	glDrawElements(GL_TRIANGLES, indexesRoom.size(), GL_UNSIGNED_INT, nullptr);
@@ -160,15 +162,15 @@ void scene_shadow::secondRender()
 	cgmath::mat4 model = modelMatrix();
 	cubeShader.setUniformMatrix("modelMatrix", model);
 
-	mvp = perspective * depthView * model;
+	mvp = perspective * view * model;
 	cubeShader.setUniformMatrix("mvpMatrix", mvp);
 
 	cgmath::mat3 normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
 	cubeShader.setUniformMatrix("normalMatrix", normal_matrix);
 
-	/*cgmath::mat4 mv = perspective * depthView;
-	depthShader.setUniformMatrix("lightMatrix", mv);
-*/
+	cgmath::mat4 mv = ortographic * depthView;
+	cubeShader.setUniformMatrix("lightMatrix", mv);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, cubeTexture);
 
@@ -190,7 +192,7 @@ void scene_shadow::secondRender()
 	model = 1.0f;
 	cubeShader.setUniformMatrix("modelMatrix", model);
 
-	mvp = perspective *depthView * model;
+	mvp = perspective *view * model;
 	cubeShader.setUniformMatrix("mvpMatrix", mvp);
 
 	normal_matrix = cgmath::mat3::transpose(cgmath::mat3::inverse(cgmath::mat3(model[0], model[1], model[2])));
@@ -300,17 +302,17 @@ cgmath::mat4 scene_shadow::perspectiveMatrix(float width, float height)
 
 cgmath::mat4 scene_shadow::ortographicMatrix()
 {
-	int right = 1000;
-	int left = -1000;
-	int top = 1000;
-	int bottom = -1000;
-	int far = 1000;
-	int near = -1000;
+	float right = 70;
+	float left = -70;
+	float top = 70;
+	float bottom = -70;
+	float far = 70;
+	float near = 0;
 	cgmath::mat4 ortographic = cgmath::mat4(
-		cgmath::vec4(2/(right-left), 0, 0, 0),
-		cgmath::vec4(0, 2 / (top-bottom), 0, 0),
-		cgmath::vec4(0, 0,-2/(far-near), 0),
-		cgmath::vec4(-(right+left)/(right-left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1)
+		cgmath::vec4(2 / (right - left), 0, 0, 0),
+		cgmath::vec4(0, 2 / (top - bottom), 0, 0),
+		cgmath::vec4(0, 0, -2 / (far - near), 0),
+		cgmath::vec4(-(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1)
 	);
 	return ortographic;
 }

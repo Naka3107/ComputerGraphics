@@ -87,11 +87,13 @@
     <ClCompile Include="src\scene_compatibility.cpp" />
     <ClCompile Include="src\scene_conchoid.cpp" />
     <ClCompile Include="src\scene_cube.cpp" />
+    <ClCompile Include="src\scene_fire.cpp" />
     <ClCompile Include="src\scene_manager.cpp" />
     <ClCompile Include="src\scene_primitives.cpp" />
     <ClCompile Include="src\scene_rain.cpp" />
     <ClCompile Include="src\scene_shading.cpp" />
     <ClCompile Include="src\scene_shadow.cpp" />
+    <ClCompile Include="src\scene_snow.cpp" />
     <ClCompile Include="src\scene_sphere.cpp" />
     <ClCompile Include="src\scene_texture.cpp" />
     <ClCompile Include="src\scene_vertex.cpp" />
@@ -115,11 +117,13 @@
     <ClInclude Include="include\scene_compatibility.h" />
     <ClInclude Include="include\scene_conchoid.h" />
     <ClInclude Include="include\scene_cube.h" />
+    <ClInclude Include="include\scene_fire.h" />
     <ClInclude Include="include\scene_manager.h" />
     <ClInclude Include="include\scene_primitives.h" />
     <ClInclude Include="include\scene_rain.h" />
     <ClInclude Include="include\scene_shading.h" />
     <ClInclude Include="include\scene_shadow.h" />
+    <ClInclude Include="include\scene_snow.h" />
     <ClInclude Include="include\scene_sphere.h" />
     <ClInclude Include="include\scene_texture.h" />
     <ClInclude Include="include\scene_vertex.h" />
@@ -134,6 +138,8 @@
     <None Include="shaders\cube.vert" />
     <None Include="shaders\depth.frag" />
     <None Include="shaders\depth.vert" />
+    <None Include="shaders\fire.frag" />
+    <None Include="shaders\fire.vert" />
     <None Include="shaders\grid.vert" />
     <None Include="shaders\palmtree.frag" />
     <None Include="shaders\positions.vert" />
@@ -144,6 +150,8 @@
     <None Include="shaders\shadow.frag" />
     <None Include="shaders\shadow.vert" />
     <None Include="shaders\simple_pass.vert" />
+    <None Include="shaders\snow.frag" />
+    <None Include="shaders\snow.vert" />
     <None Include="shaders\solid_color.frag" />
     <None Include="shaders\sphere.vert" />
     <None Include="shaders\texture.frag" />

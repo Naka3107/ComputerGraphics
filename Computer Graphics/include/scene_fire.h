@@ -13,10 +13,10 @@
 
 // Escena de prueba para comenzar a trabajar con
 // fragment shaders.
-class scene_rain : public scene
+class scene_fire : public scene
 {
 public:
-	~scene_rain();
+	~scene_fire();
 
 	void init();
 	void awake();
@@ -43,7 +43,7 @@ private:
 	GLuint colorsVBO;
 	GLuint textureCoordinatesVBO;
 	GLuint normalizedVertexesVBO;
-	GLuint indicesBuffer;
+	GLuint indexesBuffer;
 	GLuint roomIndexesBuffer;
 	GLuint roomTextureCoordinatesVBO;
 	GLuint roomPositionsVBO;
@@ -58,15 +58,19 @@ private:
 	bool jPressed;
 	bool lPressed;
 
-	float rotX = 0.0f, rotY = 0.0f, rotZ=0.0f, distRot = 2.0f, distTras = 10.0f, airX = 0.0f, activeParticles = 0.0f, emissionRate = 200.0f;
+	float rotX = 0.0f, rotY = 0.0f, rotZ = 0.0f, distRot = 2.0f, distTras = 10.0f, airX = 0.0f, activeParticles = 0.0f, emissionRate = 1200.0f;
 	int numberOfParticles;
 	int totalAliveParticles = 0;
 
+	float velX = 0.0;
+	float PI = 3.14159f;
+
 	GLuint texture1, roomTexture;
 
-	std::vector<cgmath::vec3> triangle = { { -0.1f, -0.288f,0}, {0.1f, -0.288f,0},  {0.0f,0.8f,0.0f} };
-	std::vector<cgmath::vec2> coordinates = { {0.0, 0.0}, {1.0, 0.0}, {0.5, 1.0} };
-	std::vector<cgmath::vec3> normalVectors = {	{0,0,1}, {0,0,1}, {0,0,1} };
+	std::vector<cgmath::vec3> triangle = { { -0.5f, -0.5f,0}, {0.5f, -0.5f,0},  {0.5f,0.5f,0}, {-0.5f,0.5f,0} };
+	std::vector<cgmath::vec2> coordinates = { {0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0,1.0} };
+	std::vector<cgmath::vec3> normalVectors = { {0,0,1}, {0,0,1}, {0,0,1}, {0,0,1} };
+	std::vector<unsigned int> indexes = { 0,1,2,0,2,3 };
 
 	std::vector<cgmath::vec4> room = {
 		{-50,-10,50,1}, {50,-10,50,1}, {50,-10,-50,1}, {-50,-10,-50,1},  //piso
@@ -75,14 +79,14 @@ private:
 		{50,-10,-50,1}, {50,-10,50,1}, {50, 30,50,1}, {50,30,-50,1},    //pared derecha
 		{50,-10,50,1}, {-50,-10,50,1}, {-50,30,50,1}, {50,30,50,1},     //pared trasera
 		{-200,90,-200,1}, {200,90,-200,1}, {200,90,200,1}, {-200,90,200,1},     //cielo
-	};   
+	};
 
 
 	std::vector<cgmath::vec2> roomTextureCoordinates = {
 		{0.0,0.5}, {0.5,0.5}, {0.5,1.0}, {0.0,1.0},// PISO
 		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
 		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
-		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},	
+		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
 		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
 		{0.0,0.0}, {0.5,0.0}, {0.5,0.5}, {0.0,0.5}
 	};
@@ -105,7 +109,7 @@ private:
 	std::vector<bool> isActive;
 	cgmath::vec3 fwd{ 0,0,1 };
 	cgmath::vec3 right{ 1,0,0 };
-	cgmath::vec3 camPosition{ 0,0,0 };
+	cgmath::vec3 camPosition{ 0,0,20 };
 
 	float random();
 
@@ -124,16 +128,11 @@ private:
 
 	cgmath::mat4 modelMatrix();
 	cgmath::mat4 viewMatrix();
-	cgmath::mat4 depthViewMatrix();
 	cgmath::mat4 rotateCameraMatrix(cgmath::mat4 m);
 	cgmath::mat4 rotateParticleMatrix(cgmath::mat4 m);
 	cgmath::mat4 perspectiveMatrix(float width, float height);
-	cgmath::mat4 ortographicMatrix();
-	cgmath::mat4 rotateDepthCameraMatrix(cgmath::mat4 m);
 	cgmath::mat4 view;
 	cgmath::mat4 model;
 	cgmath::mat4 mvp;
-	cgmath::mat4 depthView;
 	cgmath::mat4 perspective;
-	cgmath::mat4 ortographic;
 };

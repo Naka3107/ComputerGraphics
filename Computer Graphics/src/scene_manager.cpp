@@ -18,8 +18,10 @@
 #include "scene_cube.h"
 #include "scene_texture.h"
 #include "scene_shading.h"
-#include "scene_rain.h"
 #include "scene_shadow.h"
+#include "scene_rain.h"
+#include "scene_snow.h"
+#include "scene_fire.h"
 #include "t.h"
 
 std::vector<std::unique_ptr<scene>> scene_manager::sceneList;
@@ -142,6 +144,13 @@ void scene_manager::initialize()
 
 	std::unique_ptr<scene> scene13(new scene_rain);
 	sceneList.push_back(std::move(scene13));
+
+	std::unique_ptr<scene> scene14(new scene_snow);
+	sceneList.push_back(std::move(scene14));
+
+	std::unique_ptr<scene> scene15(new scene_fire);
+	sceneList.push_back(std::move(scene15));
+
 
 	for (auto& s : sceneList)
 		s->init();

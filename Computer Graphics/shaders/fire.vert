@@ -6,7 +6,6 @@ in vec3 NormalPosition;
 
 uniform mat4 mvpMatrix;
 uniform mat4 modelMatrix;
-uniform mat4 lightMatrix;
 
 out vec2 textureCoords;
 out vec3 normal;
@@ -19,5 +18,4 @@ void main()
 	textureCoords = TexturePosition;
 	position = vec3(modelMatrix * vec4(VertexPosition, 1.0));
 	normal = NormalPosition;
-	pixelPosition = lightMatrix * vec4(VertexPosition,1.0);
 }

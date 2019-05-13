@@ -13,10 +13,10 @@
 
 // Escena de prueba para comenzar a trabajar con
 // fragment shaders.
-class scene_rain : public scene
+class scene_snow : public scene
 {
 public:
-	~scene_rain();
+	~scene_snow();
 
 	void init();
 	void awake();
@@ -58,15 +58,18 @@ private:
 	bool jPressed;
 	bool lPressed;
 
-	float rotX = 0.0f, rotY = 0.0f, rotZ=0.0f, distRot = 2.0f, distTras = 10.0f, airX = 0.0f, activeParticles = 0.0f, emissionRate = 200.0f;
+	float rotX = 0.0f, rotY = 0.0f, rotZ = 0.0f, distRot = 2.0f, distTras = 10.0f, airX = 0.0f, activeParticles = 0.0f, emissionRate = 100.0f;
 	int numberOfParticles;
 	int totalAliveParticles = 0;
 
+	float velX=0.0;
+	float PI = 3.14159f;
+
 	GLuint texture1, roomTexture;
 
-	std::vector<cgmath::vec3> triangle = { { -0.1f, -0.288f,0}, {0.1f, -0.288f,0},  {0.0f,0.8f,0.0f} };
+	std::vector<cgmath::vec3> triangle = { { -0.8f, -0.288f,0}, {0.8f, -0.288f,0},  {0.0f,0.8f,0.0f} };
 	std::vector<cgmath::vec2> coordinates = { {0.0, 0.0}, {1.0, 0.0}, {0.5, 1.0} };
-	std::vector<cgmath::vec3> normalVectors = {	{0,0,1}, {0,0,1}, {0,0,1} };
+	std::vector<cgmath::vec3> normalVectors = { {0,0,1}, {0,0,1}, {0,0,1} };
 
 	std::vector<cgmath::vec4> room = {
 		{-50,-10,50,1}, {50,-10,50,1}, {50,-10,-50,1}, {-50,-10,-50,1},  //piso
@@ -75,14 +78,14 @@ private:
 		{50,-10,-50,1}, {50,-10,50,1}, {50, 30,50,1}, {50,30,-50,1},    //pared derecha
 		{50,-10,50,1}, {-50,-10,50,1}, {-50,30,50,1}, {50,30,50,1},     //pared trasera
 		{-200,90,-200,1}, {200,90,-200,1}, {200,90,200,1}, {-200,90,200,1},     //cielo
-	};   
+	};
 
 
 	std::vector<cgmath::vec2> roomTextureCoordinates = {
 		{0.0,0.5}, {0.5,0.5}, {0.5,1.0}, {0.0,1.0},// PISO
 		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
 		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
-		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},	
+		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
 		{0.5,0.5}, {1.0,0.5}, {1.0,1.0}, {0.5,1.0},
 		{0.0,0.0}, {0.5,0.0}, {0.5,0.5}, {0.0,0.5}
 	};
